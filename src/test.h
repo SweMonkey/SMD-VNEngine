@@ -6,6 +6,6 @@
 const VN_Page Page0;
 const VN_Page Page1;
 const VN_Page Page2;
-const VN_Page Choice0;
+const VN_Page EntryPage;
 
 #endif // STORY000_H

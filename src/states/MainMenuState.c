@@ -2,10 +2,10 @@
 #include "GameState.h"
 #include "../res/system.h"
 
-// Temp for main menu BG
-#include "../res/testres.h"
+// External main menu background
+extern const Image MM_BACKGROUND;
 
-// Start a new game
+/// @brief Begin a new game
 void Menu_StartGame()
 {
     PAL_fadeOut(0, 63, 20, FALSE);
@@ -28,7 +28,7 @@ void Menu_Debug()
     ChangeState(GS_DEBUG, 0, NULL);
 }
 
-static struct sMenu
+static struct s_menu
 {
     u8 num_entries;             // Number of entries in menu
     u8 selected_entry;          // Saved selected entry (automatic, leave at 0)
@@ -36,7 +36,7 @@ static struct sMenu
     VoidCallback *entry_function;   // Function callback which is called when entering entry
     u8 next_menu[8];            // Menu number selected entry leads to (255 = Do nothing)
     const char *text[8];        // Entry text
-} menu[] =
+} MainMenu[] =
 {{
     3,
     0, 0,
@@ -68,27 +68,27 @@ static struct sMenu
     {"Debuggy menu"}
 }};
 
-static u8 selected_idx = 0;
-static u8 menu_idx = 0;
-static const u8 menu_x = 16, menu_y = 22;
+static u8 SelectedIdx = 0;
+static u8 MenuIdx = 0;
+static const u8 MenuPosX = 16, MenuPosY = 22;
 
 void DrawMenu(u8 idx)
 {
     VDP_clearPlane(BG_A, TRUE);
 
-    menu[menu_idx].selected_entry = selected_idx;   // Mark previous menu selection entry
+    MainMenu[MenuIdx].selected_entry = SelectedIdx;   // Mark previous menu selection entry
 
-    menu_idx = idx;
-    selected_idx = menu[menu_idx].selected_entry;   // Get menu selection entry from new menu
+    MenuIdx = idx;
+    SelectedIdx = MainMenu[MenuIdx].selected_entry;   // Get menu selection entry from new menu
 
-    for (u8 i = 0; i < menu[menu_idx].num_entries; i++)
+    for (u8 i = 0; i < MainMenu[MenuIdx].num_entries; i++)
     {
-        VDP_drawText(menu[menu_idx].text[i], menu_x, menu_y+i);
+        VDP_drawText(MainMenu[MenuIdx].text[i], MenuPosX, MenuPosY+i);
     }
 
-    VDP_drawText(">", menu_x-1, menu_y+selected_idx);
+    VDP_drawText(">", MenuPosX-1, MenuPosY+SelectedIdx);
 
-    VoidCallback *func = menu[menu_idx].entry_function;
+    VoidCallback *func = MainMenu[MenuIdx].entry_function;
 
     if (func != NULL) func();
 }
@@ -100,12 +100,12 @@ void Enter_MainMenu(u8 argc, char *argv[])
     PAL_setPalette(PAL2, palette_black, CPU);
     PAL_setPalette(PAL3, palette_black, CPU);
 
-    VDP_drawImageEx(BG_B, &testBG1, TILE_ATTR_FULL(PAL0, 0, 0, 0, 1), 1, 1, TRUE, DMA_QUEUE);
+    VDP_drawImageEx(BG_B, &MM_BACKGROUND, TILE_ATTR_FULL(PAL0, 0, 0, 0, 1), 1, 1, TRUE, DMA_QUEUE);
 
     VDP_setTextPlane(BG_A);
     VDP_setTextPriority(1);
     VDP_setTextPalette(PAL3);
-    VDP_loadFontData(FONT_NORMAL.tileset->tiles, 96, DMA);
+    VDP_loadFontData(FONT_NORMAL.tiles, 96, DMA);
 
     PAL_setColor(59, 0xEEE); // Special character
     PAL_setColor(60, 0x000); // Text Outline
@@ -142,31 +142,31 @@ void Input_MainMenu(u16 joy, u16 changed, u16 state)
 {
     if (changed & state & BUTTON_A)
     {
-        u8 next = menu[menu_idx].next_menu[selected_idx];
+        u8 next = MainMenu[MenuIdx].next_menu[SelectedIdx];
         if (next != 255) 
         {
-            menu[next].prev_menu = menu_idx;    // Return menu, when going back
+            MainMenu[next].prev_menu = MenuIdx;    // Return menu, when going back
             DrawMenu(next);
         }
     }
 
     if (changed & state & BUTTON_B)
     {
-        DrawMenu(menu[menu_idx].prev_menu);
+        DrawMenu(MainMenu[MenuIdx].prev_menu);
     }
 
     if (changed & state & BUTTON_UP)
     {
-        VDP_drawText(" ", menu_x-1, menu_y+selected_idx);
-        selected_idx = (selected_idx == 0 ? menu[menu_idx].num_entries-1 : selected_idx-1);
-        VDP_drawText(">", menu_x-1, menu_y+selected_idx);
+        VDP_drawText(" ", MenuPosX-1, MenuPosY+SelectedIdx);
+        SelectedIdx = (SelectedIdx == 0 ? MainMenu[MenuIdx].num_entries-1 : SelectedIdx-1);
+        VDP_drawText(">", MenuPosX-1, MenuPosY+SelectedIdx);
     }
 
     if (changed & state & BUTTON_DOWN)
     {
-        VDP_drawText(" ", menu_x-1, menu_y+selected_idx);
-        selected_idx = (selected_idx == menu[menu_idx].num_entries-1 ? 0 : selected_idx+1);
-        VDP_drawText(">", menu_x-1, menu_y+selected_idx);
+        VDP_drawText(" ", MenuPosX-1, MenuPosY+SelectedIdx);
+        SelectedIdx = (SelectedIdx == MainMenu[MenuIdx].num_entries-1 ? 0 : SelectedIdx+1);
+        VDP_drawText(">", MenuPosX-1, MenuPosY+SelectedIdx);
     }
 
     return;

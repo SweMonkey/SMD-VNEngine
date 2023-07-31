@@ -4,9 +4,10 @@
 #include "SceneFX.h"
 #include "../res/system.h"
 
-#include "test.h"
-
 #define BUF_MAX_STRLEN 40
+
+// Entry point to begin running from
+extern const VN_Page EntryPage;
 
 // In case of redraw
 static const Image *LastBG = NULL;
@@ -31,6 +32,7 @@ static u8 sIdx = 0; // Choice selection index
 static u8 cCnt = 0; // Choice count
 
 
+/// @brief Draw background image and set palette colors
 void set_BG()
 {
     if (!bRedrawBG)
@@ -61,6 +63,7 @@ void set_BG()
     return;
 }
 
+/// @brief Draw foreground image and set palette colors
 void set_FG()
 {
     if (!bRedrawFG)
@@ -90,6 +93,7 @@ void set_FG()
     return;
 }
 
+/// @brief Prepare data for script engine, run script and retrieve data from script engine
 void ExecuteScript()
 {
     // Transfer data to VM...
@@ -110,7 +114,7 @@ void ExecuteScript()
     Script_SetVar("p.next[2]", BUF_NextPtr[2]);
     Script_SetVar("p.next[3]", BUF_NextPtr[3]);
 
-    if (ActivePage->Script != NULL) RunScript(*ActivePage->Script);
+    if (ActivePage->Script != NULL) Script_Execute(*ActivePage->Script);
 
     // Transfer results back from VM...
     Script_GetVar("p.next[0]", BUF_NextPtr[0], 8);
@@ -131,11 +135,14 @@ void ExecuteScript()
     Script_GetVar("p.line[4]", BUF_TextLine[3], BUF_MAX_STRLEN);
 }
 
+/// @brief Set visibility of shadow textbox (Recommended to clear text first if FALSE)
+/// @param bVisible 
 void setTextBoxVisibility(bool bVisible)
 {
     VDP_setHilightShadow(bVisible);
 }
 
+/// @brief Draw BG/FG, setup effects and print page text
 void DrawPage()
 {
     set_FG();
@@ -157,6 +164,7 @@ void DrawPage()
     PrintTextLine(BUF_TextLine[3], 1, 4, VNS_TextDelay);
 }
 
+/// @brief Draw BG/FG, setup effects and print choice text
 void DrawChoice()
 {
     u8 cIdx = 0;
@@ -183,7 +191,7 @@ void DrawChoice()
     if (ActivePage->NextPage[cIdx] != NULL){ PrintTextLine(ActivePage->TextLine[cIdx], 9, cIdx+1, 0); cCnt++;} cIdx++;
 }
 
-/// @brief Clear out last page/choice and get the next page/choice
+/// @brief Clear last page/choice screen and get the next page/choice
 void PrepareNext()
 {
     const VN_Page *NextPage = NULL;
@@ -311,7 +319,7 @@ void SetupState()
 
     // More arrow
     VDP_setSpriteFull(0, 156, 256, SPRITE_SIZE(1, 1), TILE_ATTR_FULL(3, 1, 0, 0, 0x7DF), 1);
-    VDP_loadTileData(FONT_SCENESH.tileset->tiles+0x200, 0x7DF , 1, CPU);
+    VDP_loadTileData(FONT_SCENESH.tiles+0x200, 0x7DF , 1, CPU);
 
     if (0)//VNS_TextBoxStyle)   // Solid textbox
     {
@@ -337,7 +345,7 @@ void Enter_Scene(u8 argc, char *argv[])
     if (ActivePage == NULL)
     {
         ActivePage = (VN_Page*)MEM_alloc(sizeof(VN_Page));
-        memcpy(ActivePage, &Choice0, sizeof(VN_Page));
+        memcpy(ActivePage, &EntryPage, sizeof(VN_Page));
 
         // Cheaty kickstart
         ExecuteScript();
@@ -502,7 +510,6 @@ void VBlank_Scene()
 
     return;
 }
-
 
 const VN_GameState SceneState = 
 {

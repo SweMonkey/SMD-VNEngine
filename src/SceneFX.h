@@ -4,8 +4,6 @@
 #include <genesis.h>
 #include "SceneUtil.h"
 
-
-//void RunEffectNow();
 void RunEffectVSYNC();
 void SetEffects(PageLayer Layer, LayerEffect Effect);
 void ResetEffect();

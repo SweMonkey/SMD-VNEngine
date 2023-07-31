@@ -3,7 +3,7 @@
 
 extern const Image OPT_BG;
 extern const Image FG_DUMMY;
-extern const Image FONT_NORMAL;
-extern const Image FONT_SCENESH;
+extern const TileSet FONT_NORMAL;
+extern const TileSet FONT_SCENESH;
 
 #endif // _RES_SYSTEM_H_

@@ -17,7 +17,7 @@
 #define DEFV 0x9
 #define CATS 0xA
 #define DBPR 0xB
-#define ELSE 0xc
+#define ELSE 0xC
 #define NOPE 0xFF
 
 const char *opcodes[DEF_NUM_OPCODE] =
@@ -47,13 +47,13 @@ const char *opcodes[DEF_NUM_OPCODE] =
 #define SR_SKP_SH 0x12  // Skip next OP shift
 
 #define SR_LOP 0xFF            // Last OP executed (bits 0-7)
-#define SR_CMP (1<<SR_CMP_SH)  // Bit 16 = Result of last comparison
+#define SR_CMP (1<<SR_CMP_SH)  // Bit 16 = Result of last comparison (boolean)
 #define SR_NEW (1<<SR_NEW_SH)  // Bit 17 = 1 if a new variable was created
 #define SR_SKP (1<<SR_SKP_SH)  // Bit 18 = Skip next OP if 1
 
 static u32 StatusRegister;
 
-ScriptVar *VarList[DEF_MAX_VAR];
+VN_ScriptVar *VarList[DEF_MAX_VAR];
 u8 NumVar = 0;
 
 
@@ -89,7 +89,7 @@ char *itoa(char *dest, s32 i)
 }
 
 // XXXX YY,<ZZ>
-void SearchP2(char *line, ScriptVar *vret)
+void SearchP2(char *line, VN_ScriptVar *vret)
 {
     char varname[DEF_MAX_VARVALUE] = {'\0'}; // Needs to be able to contain atleast a 48 char string, unless its a variable name (16 char max)
     u16 i = 5;
@@ -103,12 +103,14 @@ void SearchP2(char *line, ScriptVar *vret)
             while (line[i] == ' ')
             {
                 i++;
+                if (i >= DEF_MAX_LINEBUFFER) break;
             }
 
             break;
         }
 
         i++;
+        if (i >= DEF_MAX_LINEBUFFER) break;
     }
 
     while (1)
@@ -149,7 +151,7 @@ void SearchP2(char *line, ScriptVar *vret)
 }
 
 // XXXX <YY>,ZZ
-ScriptVar *SearchP1(char *line)
+VN_ScriptVar *SearchP1(char *line)
 {
     char varname[DEF_MAX_VARVALUE] = {'\0'};
     u16 i = 5;
@@ -210,8 +212,8 @@ u16 GetOP(char *line)
 
 void ParseLine(char *line)
 {
-    ScriptVar tmpP2;
-    ScriptVar *tmpP1;
+    VN_ScriptVar tmpP2;
+    VN_ScriptVar *tmpP1;
     u8 opcode = NOPE;
 
     opcode = GetOP(line);
@@ -359,7 +361,7 @@ u32 GetLine(const char *str, char *ret, u32 start, u32 end)
 
 /// @brief Parse and run script in VM
 /// @param script Pointer to a script
-void RunScript(const char *script)
+void Script_Execute(const char *script)
 {
     char *ret = (char*)malloc(DEF_MAX_LINEBUFFER);
     u32 pos = 0;
@@ -396,8 +398,7 @@ void RunScript(const char *script)
         UNSET_SR(SR_LOP);
         SET_SR(GetOP(ret));
 
-        //kprintf("VM SR: $%08lX - pos: %ld\n", StatusRegister, pos);
-        kprintf("VM SR: $%08lX - OP: %s - Skip: %s", StatusRegister, opcodes[GET_SR(SR_LOP)], (GET_SR(SR_SKP) == 0 ? "no":"yes"));
+        //kprintf("VM SR: $%08lX - OP: %s - Skip: %s", StatusRegister, opcodes[GET_SR(SR_LOP)], (GET_SR(SR_SKP) == 0 ? "no":"yes"));
     }
 
     free(ret);
@@ -408,11 +409,11 @@ void RunScript(const char *script)
 /// @param name Name of the new variable
 /// @param value Value of the new variable
 /// @return TRUE if added, FALSE if out of memory slots in VM
-ScriptVar *Script_AddVar(const char *name, const char *value)
+VN_ScriptVar *Script_AddVar(const char *name, const char *value)
 {
     if (NumVar >= DEF_MAX_VAR-1) return NULL;
 
-    ScriptVar *ptr = (ScriptVar*)malloc(sizeof(ScriptVar));
+    VN_ScriptVar *ptr = (VN_ScriptVar*)malloc(sizeof(VN_ScriptVar));
 
     strcpy(ptr->name, name);
     strcpy(ptr->value, value);

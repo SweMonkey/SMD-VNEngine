@@ -12,7 +12,7 @@ void Enter_Crash(u8 argc, char *argv[])
     VDP_setTextPlane(BG_A);
     VDP_setTextPriority(1);
     VDP_setTextPalette(PAL3);
-    VDP_loadFontData(FONT_NORMAL.tileset->tiles, 96, DMA);
+    VDP_loadFontData(FONT_NORMAL.tiles, 96, DMA);
 
     PAL_setColor(59, 0xEEE); // Special character
     PAL_setColor(60, 0x000); // Text Outline

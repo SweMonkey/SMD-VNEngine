@@ -38,7 +38,7 @@ void Enter_Options(u8 argc, char *argv[])
     VDP_setTextPriority(1);
     VDP_setTextPalette(PAL3);
 
-    VDP_loadFontData(FONT_NORMAL.tileset->tiles, 96, DMA);
+    VDP_loadFontData(FONT_NORMAL.tiles, 96, DMA);
 
     PAL_setColor(50, 0xEEE); // Color picker outline
     PAL_setColor(59, 0xCC0); // Special character

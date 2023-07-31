@@ -1,15 +1,22 @@
 
 #include "SceneFX.h"
 
-static u8 DelayTimer[2] = {0};
-static s16 LineTable[2][224] = {0};
+// LineGlitch variables
+static u8 DelayTimer[2] = {0, 0};
 
-static u8 ShakeCount[2] = {80};
+// ScreenShake variables
+static u8 ShakeCount[2] = {80, 80};
 
-static LayerEffect ActiveEffect[2] = {0};
-static bool bEffectRunning[2] = {FALSE};
+// Line offsets used for scrolling individual screen scanlines
+static s16 LineTable[2][224] = {{0}, {0}};
+
+// Misc effect status
+static LayerEffect ActiveEffect[2] = {0, 0};
+static bool bEffectRunning[2] = {FALSE, FALSE};
 
 
+/// @brief Effect which simulates glitchy lines
+/// @param Layer Layer to run the effect on (PL_BG, PL_FG)
 void FX_LineGlitch(PageLayer Layer)
 {
     u8 i = 0;
@@ -57,12 +64,9 @@ void FX_LineGlitch(PageLayer Layer)
     VDP_setHorizontalScrollLine((Layer==PL_FG?BG_A:BG_B), 0, LineTable[Layer], 224, DMA);
 }
 
-void FX_ShadeUD(PageLayer Layer)
-{
-    ActiveEffect[Layer] &= ~LFX_SHAKEUD;
-}
-
-void FX_ShadeLR(PageLayer Layer)
+/// @brief Simple effect to shake the screen left and right
+/// @param Layer Layer to run the effect on (PL_BG, PL_FG)
+void FX_ShakeLR(PageLayer Layer)
 {
     if (ShakeCount[Layer]--)
     {
@@ -83,6 +87,7 @@ void FX_ShadeLR(PageLayer Layer)
     }
 }
 
+/// @brief This function ticks the active effects and should be run from a VBlank handler.
 void RunEffectVSYNC()
 {
     for (u8 l = 0; l < 2; l++)
@@ -91,15 +96,19 @@ void RunEffectVSYNC()
 
         if (ActiveEffect[l] & LFX_LINEGLITCH) FX_LineGlitch(l);
 
-        if (ActiveEffect[l] & LFX_SHAKELR) FX_ShadeLR(l);
+        if (ActiveEffect[l] & LFX_SHAKELR) FX_ShakeLR(l);
     }
 }
 
+/// @brief Set the active effects
+/// @param Layer Layer to set the effect for (PL_BG, PL_FG)
+/// @param Effect Effects to set active
 void SetEffects(PageLayer Layer, LayerEffect Effect)
 {
     ActiveEffect[Layer] |= Effect;
 }
 
+/// @brief Reset all active effects and restore the screen to normal
 void ResetEffect()
 {
     for (u8 l = 0; l < 2; l++)

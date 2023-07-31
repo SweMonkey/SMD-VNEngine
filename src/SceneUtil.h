@@ -18,7 +18,7 @@ typedef enum e_effect{LFX_NONE          = 0,
                       LFX_SLIDEIN       = 0x4,
                       LFX_SLIDEOUT      = 0x8,
                       LFX_SHAKELR       = 0x10,
-                      LFX_SHAKEUD       = 0x20,
+                      LFX_UNUSED        = 0x20,
                       LFX_LINEGLITCH    = 0x40} LayerEffect;
 
 typedef struct s_music
@@ -54,10 +54,6 @@ typedef struct s_page
     const char **Script;
     const struct s_music *XGM_Track;
 } VN_Page;
-
-//extern const u32 TB_Tile[];     // Text BG tile
-//extern const u32 TB_Tile2[];    // Textbox BG tile (mesh)
-//extern const u32 SH_Tile[];     // Shadow/Highlight tile
 
 extern u16 VNS_TextDelay;
 extern u8 VNS_TextBoxStyle;

@@ -83,15 +83,9 @@ const u16 PortraitMap[6][6] =
     },
 };
 
-// TextBox tile - Temporary fill bg
-//const u32 TB_Tile[8]  = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};   // Textbox BG tile
-//const u32 TB_Tile2[8] = {0xF0F0F0F0, 0x0F0F0F0F, 0xF0F0F0F0, 0x0F0F0F0F, 0xF0F0F0F0, 0x0F0F0F0F, 0xF0F0F0F0, 0x0F0F0F0F};   // Textbox BG tile (mesh)
-//const u32 SH_Tile[8]  = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};   // Shadow/Highlight tile
-//const u32 Tile_Blank[8]  = {0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000};   // Blank tile
-
-u16 VNS_TextDelay = 50;
-u8 VNS_TextBoxStyle = 0;
-u16 VNS_TextBoxColor = 0x222;//0xE60;
+u16 VNS_TextDelay = 25;         // 100-VNS_TextDelay = Text printing speed
+u8 VNS_TextBoxStyle = 0;        // TODO: reimplement?
+u16 VNS_TextBoxColor = 0x222;   // TODO: reimplement?
 
 static u16 TileIdxFG_End = 1;
 static u16 TileIdxBG_Start = 0x5FF;
@@ -227,7 +221,7 @@ void PrintTextLine(const char *str, u8 x, u8 y, u16 delay)
     {
         if (str[current_char] == 0) break;
 
-        VDP_loadTileData(FONT_SCENESH.tileset->tiles+((str[current_char]-32)*8), CharMap[y][px] , 1, CPU);        
+        VDP_loadTileData(FONT_SCENESH.tiles+((str[current_char]-32)*8), CharMap[y][px] , 1, DMA_QUEUE); // Many small updates...
 
         px++;
 
