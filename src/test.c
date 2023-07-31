@@ -110,7 +110,7 @@ const VN_Page Page2 =
 
 const VN_Page Choice0 =
 {
-    PAGETYPE_CHOICE,      // Page Type
+    PAGETYPE_CHOICE,    // Page Type
     &UnknownFemale,     // Character
 
     &testBG2,           // BG
