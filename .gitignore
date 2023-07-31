@@ -1,0 +1,11 @@
+out/
+src/boot/
+tmp/
+res/test/
+
+res/testres.h
+res/testres.res
+
+.directory
+.vscode
+build.sh

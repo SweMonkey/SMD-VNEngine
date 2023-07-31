@@ -1,0 +1,4 @@
+Original font by DamienG - https://damieng.com/zx-origins
+
+Font slightly modified for use in Sega Megadrive/Genesis project "VN Engine"
+
