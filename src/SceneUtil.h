@@ -18,8 +18,9 @@ typedef enum e_effect{LFX_NONE          = 0,
                       LFX_SLIDEIN       = 0x4,
                       LFX_SLIDEOUT      = 0x8,
                       LFX_SHAKELR       = 0x10,
-                      LFX_UNUSED        = 0x20,
-                      LFX_LINEGLITCH    = 0x40} LayerEffect;
+                      LFX_SILHOUETTE    = 0x20,
+                      LFX_LINEGLITCH    = 0x40,
+                      LFX_SINEWAVE      = 0x80} LayerEffect;
 
 typedef struct s_music
 {

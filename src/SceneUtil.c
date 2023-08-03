@@ -83,7 +83,7 @@ const u16 PortraitMap[6][6] =
     },
 };
 
-u16 VNS_TextDelay = 25;         // 100-VNS_TextDelay = Text printing speed
+u16 VNS_TextDelay = 20;         // 100-VNS_TextDelay = Text printing speed
 u8 VNS_TextBoxStyle = 0;        // TODO: reimplement?
 u16 VNS_TextBoxColor = 0x222;   // TODO: reimplement?
 
@@ -221,7 +221,7 @@ void PrintTextLine(const char *str, u8 x, u8 y, u16 delay)
     {
         if (str[current_char] == 0) break;
 
-        VDP_loadTileData(FONT_SCENESH.tiles+((str[current_char]-32)*8), CharMap[y][px] , 1, DMA_QUEUE); // Many small updates...
+        VDP_loadTileData(FONT_SCENESH.tiles+((str[current_char]-32)<<3), CharMap[y][px] , 1, DMA); // Many small updates...
 
         px++;
 

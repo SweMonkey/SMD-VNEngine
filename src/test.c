@@ -44,7 +44,7 @@ const VN_Page Page0 =
     },
     0,                  // Switch delay
     {                   // Next Page
-        &Page1,
+        &EntryPage,
         &Page2,
         NULL,
         NULL
@@ -72,35 +72,7 @@ const VN_Page Page1 =
     },
     0,                  // Switch delay
     {                   // Next Page
-        &Page0,
-        NULL,
-        NULL,
-        NULL
-    },
-    NULL,   // Script
-    NULL    // Track
-};
-
-const VN_Page Page2 =
-{
-    PAGETYPE_PAGE,      // Page Type
-    &UnknownFemale,     // Character
-
-    NULL,               // BG
-    NULL,               // FG
-
-    TRUE,               // bTextbox
-    (LFX_FADEOUT),      // BG Effects
-    (LFX_FADEOUT),      // FG Effects
-    {
-        "Page 2\0",
-        "\0",
-        "\0",
-        "\0"
-    },
-    0,                  // Switch delay
-    {                   // Next Page
-        &Page0,
+        &EntryPage,
         NULL,
         NULL,
         NULL
@@ -119,12 +91,12 @@ const VN_Page EntryPage =
 
     TRUE,               // bTextbox
     (LFX_FADEIN | LFX_FADEOUT), // BG Effects
-    (LFX_FADEIN | LFX_FADEOUT), // FG Effects
+    (LFX_FADEIN | LFX_FADEOUT | LFX_SINEWAVE), // FG Effects
     {
-        "Choice 1 - Page 0\0",
-        "Choice 2 - Page 1\0",
-        "Choice 3 - Page 2\0",
-        "Choice 4 - Choice page\0"
+        "Choice 1 - Script string test\0",
+        "Choice 2 - error\0",
+        "Choice 3 - FX Tests\0",
+        "Choice 4 - This page\0"
     },
     0,                  // Switch delay
     {                   // Next Page
@@ -132,6 +104,317 @@ const VN_Page EntryPage =
         &Page1,
         &Page2,
         &EntryPage
+    },
+    NULL,   // Script
+    NULL    // Track
+};
+
+
+
+// Fx tests
+
+const VN_Page Page2 =
+{
+    PAGETYPE_PAGE,      // Page Type
+    &UnknownFemale,     // Character
+
+    NULL,               // BG
+    NULL,               // FG
+
+    TRUE,               // bTextbox
+    (LFX_FADEIN),      // BG Effects
+    (LFX_NONE),         // FG Effects
+    {
+        "FadeIn BG\0",
+        "\0",
+        "\0",
+        "\0"
+    },
+    0,                  // Switch delay
+    {                   // Next Page
+        &Page3,
+        NULL,
+        NULL,
+        NULL
+    },
+    NULL,   // Script
+    NULL    // Track
+};
+const VN_Page Page3 =
+{
+    PAGETYPE_PAGE,      // Page Type
+    &UnknownFemale,     // Character
+
+    NULL,               // BG
+    NULL,               // FG
+
+    TRUE,               // bTextbox
+    (LFX_NONE),      // BG Effects
+    (LFX_FADEIN),         // FG Effects
+    {
+        "FadeIn FG\0",
+        "\0",
+        "\0",
+        "\0"
+    },
+    0,                  // Switch delay
+    {                   // Next Page
+        &Page4,
+        NULL,
+        NULL,
+        NULL
+    },
+    NULL,   // Script
+    NULL    // Track
+};
+
+const VN_Page Page4 =
+{
+    PAGETYPE_PAGE,      // Page Type
+    &UnknownFemale,     // Character
+
+    NULL,               // BG
+    NULL,               // FG
+
+    TRUE,               // bTextbox
+    (LFX_FADEOUT),      // BG Effects
+    (LFX_NONE),      // FG Effects
+    {
+        "FadeOut BG\0",
+        "\0",
+        "\0",
+        "\0"
+    },
+    0,                  // Switch delay
+    {                   // Next Page
+        &Page5,
+        NULL,
+        NULL,
+        NULL
+    },
+    NULL,   // Script
+    NULL    // Track
+};
+
+const VN_Page Page5 =
+{
+    PAGETYPE_PAGE,      // Page Type
+    &UnknownFemale,     // Character
+
+    NULL,               // BG
+    NULL,               // FG
+
+    TRUE,               // bTextbox
+    (LFX_NONE),      // BG Effects
+    (LFX_FADEOUT),      // FG Effects
+    {
+        "FadeOut FG\0",
+        "\0",
+        "\0",
+        "\0"
+    },
+    0,                  // Switch delay
+    {                   // Next Page
+        &Page6,
+        NULL,
+        NULL,
+        NULL
+    },
+    NULL,   // Script
+    NULL    // Track
+};
+
+const VN_Page Page6 =
+{
+    PAGETYPE_PAGE,      // Page Type
+    &UnknownFemale,     // Character
+
+    NULL,               // BG
+    NULL,               // FG
+
+    TRUE,               // bTextbox
+    (LFX_SHAKELR),      // BG Effects
+    (LFX_NONE),      // FG Effects
+    {
+        "ShakeLR BG\0",
+        "\0",
+        "\0",
+        "\0"
+    },
+    0,                  // Switch delay
+    {                   // Next Page
+        &Page7,
+        NULL,
+        NULL,
+        NULL
+    },
+    NULL,   // Script
+    NULL    // Track
+};
+
+const VN_Page Page7 =
+{
+    PAGETYPE_PAGE,      // Page Type
+    &UnknownFemale,     // Character
+
+    NULL,               // BG
+    NULL,               // FG
+
+    TRUE,               // bTextbox
+    (LFX_NONE),      // BG Effects
+    (LFX_SHAKELR),      // FG Effects
+    {
+        "ShakeLR FG\0",
+        "\0",
+        "\0",
+        "\0"
+    },
+    0,                  // Switch delay
+    {                   // Next Page
+        &Page8,
+        NULL,
+        NULL,
+        NULL
+    },
+    NULL,   // Script
+    NULL    // Track
+};
+
+const VN_Page Page8 =
+{
+    PAGETYPE_PAGE,      // Page Type
+    &UnknownFemale,     // Character
+
+    NULL,               // BG
+    NULL,               // FG
+
+    TRUE,               // bTextbox
+    (LFX_LINEGLITCH),      // BG Effects
+    (LFX_NONE),      // FG Effects
+    {
+        "LineGlitch BG\0",
+        "\0",
+        "\0",
+        "\0"
+    },
+    0,                  // Switch delay
+    {                   // Next Page
+        &Page9,
+        NULL,
+        NULL,
+        NULL
+    },
+    NULL,   // Script
+    NULL    // Track
+};
+
+const VN_Page Page9 =
+{
+    PAGETYPE_PAGE,      // Page Type
+    &UnknownFemale,     // Character
+
+    NULL,               // BG
+    NULL,               // FG
+
+    TRUE,               // bTextbox
+    (LFX_NONE),      // BG Effects
+    (LFX_LINEGLITCH),      // FG Effects
+    {
+        "LineGlitch FG\0",
+        "\0",
+        "\0",
+        "\0"
+    },
+    0,                  // Switch delay
+    {                   // Next Page
+        &Page10,
+        NULL,
+        NULL,
+        NULL
+    },
+    NULL,   // Script
+    NULL    // Track
+};
+
+const VN_Page Page10 =
+{
+    PAGETYPE_PAGE,      // Page Type
+    &UnknownFemale,     // Character
+
+    NULL,               // BG
+    NULL,               // FG
+
+    TRUE,               // bTextbox
+    (LFX_NONE),      // BG Effects
+    (LFX_SILHOUETTE),      // FG Effects
+    {
+        "Silhouette FG\0",
+        "\0",
+        "\0",
+        "\0"
+    },
+    0,                  // Switch delay
+    {                   // Next Page
+        &Page11,
+        NULL,
+        NULL,
+        NULL
+    },
+    NULL,   // Script
+    NULL    // Track
+};
+
+const VN_Page Page11 =
+{
+    PAGETYPE_PAGE,      // Page Type
+    &UnknownFemale,     // Character
+
+    NULL,               // BG
+    NULL,               // FG
+
+    TRUE,               // bTextbox
+    (LFX_SINEWAVE),      // BG Effects
+    (LFX_NONE),      // FG Effects
+    {
+        "SineWave BG\0",
+        "\0",
+        "\0",
+        "\0"
+    },
+    0,                  // Switch delay
+    {                   // Next Page
+        &Page12,
+        NULL,
+        NULL,
+        NULL
+    },
+    NULL,   // Script
+    NULL    // Track
+};
+
+const VN_Page Page12 =
+{
+    PAGETYPE_PAGE,      // Page Type
+    &UnknownFemale,     // Character
+
+    NULL,               // BG
+    NULL,               // FG
+
+    TRUE,               // bTextbox
+    (LFX_NONE),      // BG Effects
+    (LFX_SINEWAVE),      // FG Effects
+    {
+        "SineWave FG\0",
+        "\0",
+        "\0",
+        "\0"
+    },
+    0,                  // Switch delay
+    {                   // Next Page
+        &EntryPage,
+        NULL,
+        NULL,
+        NULL
     },
     NULL,   // Script
     NULL    // Track

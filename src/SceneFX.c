@@ -7,15 +7,17 @@ static u8 DelayTimer[2] = {0, 0};
 // ScreenShake variables
 static u8 ShakeCount[2] = {80, 80};
 
+// SineWave variables
+static u16 SineScroll[2] = {0,  256};
+
 // Line offsets used for scrolling individual screen scanlines
-static s16 LineTable[2][224] = {{0}, {0}};
+static s16 LineTable[2][256] = {{0}, {0}};
 
 // Misc effect status
 static LayerEffect ActiveEffect[2] = {0, 0};
 static bool bEffectRunning[2] = {FALSE, FALSE};
 
-
-/// @brief Effect which simulates glitchy lines
+/// @brief Effect which (tries to) simulates glitchy lines
 /// @param Layer Layer to run the effect on (PL_BG, PL_FG)
 void FX_LineGlitch(PageLayer Layer)
 {
@@ -87,6 +89,20 @@ void FX_ShakeLR(PageLayer Layer)
     }
 }
 
+/// @brief Wave layer in a sinus shape
+/// @param Layer Layer to run the effect on (PL_BG, PL_FG)
+void FX_SineWave(PageLayer Layer)
+{
+    for (u16 i = 0; i < 256; i++)
+    {
+        LineTable[Layer][i] = sinFix16(i+SineScroll[Layer]);
+    }
+    
+    SineScroll[Layer] += 4;
+
+    VDP_setHorizontalScrollLine((Layer==PL_FG?BG_A:BG_B), 0, LineTable[Layer], 224, DMA);
+}
+
 /// @brief This function ticks the active effects and should be run from a VBlank handler.
 void RunEffectVSYNC()
 {
@@ -97,6 +113,8 @@ void RunEffectVSYNC()
         if (ActiveEffect[l] & LFX_LINEGLITCH) FX_LineGlitch(l);
 
         if (ActiveEffect[l] & LFX_SHAKELR) FX_ShakeLR(l);
+
+        if (ActiveEffect[l] & LFX_SINEWAVE) FX_SineWave(l);
     }
 }
 
@@ -120,6 +138,8 @@ void ResetEffect()
 
             bEffectRunning[l] = FALSE;
         }
+
+        //SineScroll[l] = random() % 256;
 
         ActiveEffect[l] = 0;
     }

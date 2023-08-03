@@ -37,28 +37,32 @@ void set_BG()
 {
     if (!bRedrawBG)
     {
-        if (ActivePage->BG == LastBG) goto skip;
+        if (ActivePage->BG == LastBG) goto SkipDrawBG;
 
         if (ActivePage->BG == NULL)
         {
             ActivePage->BG = LastBG;
+            goto SkipDrawBG;
         }
     }
 
-    PAL_fadeOut(0, 15, 2, FALSE);
-
     DrawImageBG(ActivePage->BG);
 
-    skip:
+    SkipDrawBG:
 
-    if (ActivePage->EffectBG & LFX_FADEIN)
-        PAL_fadeIn(0, 15, ActivePage->BG->palette->data, 20, FALSE);
+    if (ActivePage->EffectBG & LFX_SILHOUETTE)
+    {
+        PAL_fadeOut(0, 15, 10, FALSE);
+    }
     else
-        PAL_setColors(0, ActivePage->BG->palette->data, 16, DMA_QUEUE);
+    {
+        if (ActivePage->EffectBG & LFX_FADEIN)
+            PAL_fadeIn(0, 15, ActivePage->BG->palette->data, 20, FALSE);
+        else
+            PAL_setColors(0, ActivePage->BG->palette->data, 16, DMA_QUEUE);
+    }
 
-    LastBG = ActivePage->BG;
-
-    bRedrawBG = FALSE;
+    if (ActivePage->BG != NULL) LastBG = ActivePage->BG;
         
     return;
 }
@@ -68,27 +72,32 @@ void set_FG()
 {
     if (!bRedrawFG)
     {
-        if (ActivePage->FG == LastFG) goto skip;
+        if (ActivePage->FG == LastFG) goto SkipDrawFG;
 
         if (ActivePage->FG == NULL)
         {
             ActivePage->FG = LastFG;
+            goto SkipDrawFG;
         }
     }
-    PAL_fadeOut(16, 31, 4, FALSE);
 
     DrawImageFG(ActivePage->FG);
 
-    skip:
+    SkipDrawFG:
 
-    if (ActivePage->EffectFG & LFX_FADEIN)
-        PAL_fadeIn(16, 31, ActivePage->FG->palette->data, 20, FALSE);
+    if (ActivePage->EffectFG & LFX_SILHOUETTE)
+    {
+        PAL_fadeOut(16, 31, 10, FALSE);
+    }
     else
-        PAL_setColors(16, ActivePage->FG->palette->data, 16, DMA_QUEUE);
+    {
+        if (ActivePage->EffectFG & LFX_FADEIN)
+            PAL_fadeIn(16, 31, ActivePage->FG->palette->data, 20, FALSE);
+        else
+            PAL_setColors(16, ActivePage->FG->palette->data, 16, DMA_QUEUE);
+    }
 
-    LastFG = ActivePage->FG;
-
-    bRedrawFG = FALSE;
+    if (ActivePage->FG != NULL) LastFG = ActivePage->FG;
 
     return;
 }
@@ -145,23 +154,36 @@ void setTextBoxVisibility(bool bVisible)
 /// @brief Draw BG/FG, setup effects and print page text
 void DrawPage()
 {
+    u16 tmp_textdelay;
+
     set_FG();
-    waitMs(66);
     set_BG();
 
-    SetEffects(PL_BG, ActivePage->EffectBG);
-    SetEffects(PL_FG, ActivePage->EffectFG);
+    if (bRedrawBG || bRedrawFG)
+    {
+        tmp_textdelay = 0;
 
-    waitMs(333);
+        bRedrawBG = FALSE;
+        bRedrawFG = FALSE;
+    }
+    else
+    {
+        SetEffects(PL_BG, ActivePage->EffectBG);
+        SetEffects(PL_FG, ActivePage->EffectFG);
+
+        tmp_textdelay = VNS_TextDelay;
+    }
+
+    SYS_doVBlankProcess();
 
     setTextBoxVisibility(ActivePage->bTextbox);
 
     PrintTextLine(BUF_Name, 1, 0, 0);
 
-    PrintTextLine(BUF_TextLine[0], 1, 1, VNS_TextDelay);
-    PrintTextLine(BUF_TextLine[1], 1, 2, VNS_TextDelay);
-    PrintTextLine(BUF_TextLine[2], 1, 3, VNS_TextDelay);
-    PrintTextLine(BUF_TextLine[3], 1, 4, VNS_TextDelay);
+    PrintTextLine(BUF_TextLine[0], 1, 1, tmp_textdelay);
+    PrintTextLine(BUF_TextLine[1], 1, 2, tmp_textdelay);
+    PrintTextLine(BUF_TextLine[2], 1, 3, tmp_textdelay);
+    PrintTextLine(BUF_TextLine[3], 1, 4, tmp_textdelay);
 }
 
 /// @brief Draw BG/FG, setup effects and print choice text
@@ -171,19 +193,29 @@ void DrawChoice()
     cCnt = 0;
 
     set_FG();
-    waitMs(66);
     set_BG();
 
-    SetEffects(PL_BG, ActivePage->EffectBG);
-    SetEffects(PL_FG, ActivePage->EffectFG);
+    if (bRedrawBG || bRedrawFG)
+    {
+        bRedrawBG = FALSE;
+        bRedrawFG = FALSE;
+    }
+    else
+    {
+        SetEffects(PL_BG, ActivePage->EffectBG);
+        SetEffects(PL_FG, ActivePage->EffectFG);
+    }
 
-    //waitMs(333);
+    SYS_doVBlankProcess();
 
     setTextBoxVisibility(ActivePage->bTextbox);
 
     VDP_setSpriteLink(20, 21);  // Enable extra portrait sprites
 
     DrawPortrait(ActivePage->Character->Portrait);
+
+    sIdx = 0;
+    PrintTextLine(">", 8, 1, 0);
 
     if (ActivePage->NextPage[cIdx] != NULL){ PrintTextLine(ActivePage->TextLine[cIdx], 9, cIdx+1, 0); cCnt++;} cIdx++;
     if (ActivePage->NextPage[cIdx] != NULL){ PrintTextLine(ActivePage->TextLine[cIdx], 9, cIdx+1, 0); cCnt++;} cIdx++;
@@ -247,7 +279,7 @@ void PrepareNext()
         NextPage = ActivePage->NextPage[sIdx];
     }
 
-    ResetEffect();
+    ResetEffect();  // TODO: Don't reset if the next page has the same effects!
 
     if (NextPage != NULL)
     {
@@ -379,8 +411,8 @@ void ReEnter_Scene()
 
     SetupState();
 
-    ActivePage->BG = LastBG;
-    ActivePage->FG = LastFG;
+    //ActivePage->BG = LastBG;
+    //ActivePage->FG = LastFG;
 
     bRedrawBG = TRUE;
     bRedrawFG = TRUE;
@@ -417,6 +449,8 @@ void Exit_Scene()
     VDP_clearPlane(BG_A, TRUE);
 
     ResetEffect();
+
+    SYS_doVBlankProcess();
 
     return;
 }
@@ -464,11 +498,6 @@ void Run_Scene()
     }
     else if (ActivePage->PageType == PAGETYPE_CHOICE)
     {
-        PrintTextLine(" ", 8, 1, 0);
-        PrintTextLine(" ", 8, 2, 0);
-        PrintTextLine(" ", 8, 3, 0);
-        PrintTextLine(" ", 8, 4, 0);
-        PrintTextLine(">", 8, sIdx+1, 0);
     }
 
     return;
@@ -478,7 +507,7 @@ void Input_Scene(u16 joy, u16 changed, u16 state)
 {
     if (changed & state & BUTTON_START)
     {
-        ChangeState(GS_Options, 0, NULL);
+        if (bSwitchPage == FALSE) ChangeState(GS_Options, 0, NULL);
     }
 
     if (ActivePage->PageType == PAGETYPE_CHOICE)
@@ -491,6 +520,15 @@ void Input_Scene(u16 joy, u16 changed, u16 state)
         if (changed & state & BUTTON_DOWN)
         {
             if (sIdx < (cCnt-1)) sIdx++;
+        }
+
+        if (changed & state & (BUTTON_UP | BUTTON_DOWN)) 
+        {
+            PrintTextLine(" ", 8, 1, 0);
+            PrintTextLine(" ", 8, 2, 0);
+            PrintTextLine(" ", 8, 3, 0);
+            PrintTextLine(" ", 8, 4, 0);
+            PrintTextLine(">", 8, sIdx+1, 0);
         }
     }
 
