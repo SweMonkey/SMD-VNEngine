@@ -3,7 +3,10 @@
 
 #include "SceneUtil.h"
 
+const VN_Page PageInput;
 const VN_Page Page0;
+const VN_Page Page01;
+
 const VN_Page Page1;
 const VN_Page Page2;
 const VN_Page Page3;

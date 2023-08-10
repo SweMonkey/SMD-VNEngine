@@ -1,8 +1,9 @@
 
 #include "GameState.h"
 
-void Enter_DebugState(u8 argc, char *argv[])
+void Enter_DebugState(u8 argc, const char *argv[])
 {
+    VDP_drawText("No debug code loaded.", 4, 4);
 }
 
 void ReEnter_DebugState()

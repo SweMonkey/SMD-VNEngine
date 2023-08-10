@@ -9,6 +9,7 @@
 #define PAGETYPE_NULL 0
 #define PAGETYPE_PAGE 1
 #define PAGETYPE_CHOICE 2
+#define PAGETYPE_INPUT 3
 
 typedef enum e_pagelayer{PL_BG = 0, PL_FG = 1} PageLayer;
 

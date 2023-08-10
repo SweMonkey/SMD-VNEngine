@@ -14,11 +14,15 @@ static const Image *LastBG = NULL;
 static const Image *LastFG = NULL;
 static bool bRedrawBG = FALSE;
 static bool bRedrawFG = FALSE;
+static bool bInstantText = FALSE;
 
 // Temporary buffer variables
 static char BUF_Name[BUF_MAX_STRLEN];
 static char BUF_TextLine[4][BUF_MAX_STRLEN];
 static char BUF_NextPtr[4][8];
+
+// External variables
+extern char InputBuffer[32];
 
 // Scene state variables
 static bool bSwitchPage = TRUE;
@@ -31,8 +35,41 @@ static u8 MoreArrowCounter = 32;
 static u8 sIdx = 0; // Choice selection index
 static u8 cCnt = 0; // Choice count
 
+/// @brief Set the new palette depending on page FX (Fade In/Out or Set)
+void set_Palettes()
+{
+    // Foreground
+    if ((ActivePage->EffectFG & LFX_FADEIN) && (!bRedrawFG))
+    {
+        PAL_fadeIn(16, 47, ActivePage->FG->palette->data, 20, FALSE);
+    }
+    else if (ActivePage->EffectFG & LFX_SILHOUETTE)
+    {
+        PAL_fadeOut(16, 47, 10, FALSE);
+    }
+    else 
+    {
+        PAL_setColors(16, ActivePage->FG->palette->data, 32, DMA_QUEUE);
+    }
 
-/// @brief Draw background image and set palette colors
+    // Background
+    if ((ActivePage->EffectBG & LFX_FADEIN) && (!bRedrawBG))
+    {
+        PAL_fadeIn(0, 15, ActivePage->BG->palette->data, 20, FALSE);
+    }
+    else if (ActivePage->EffectBG & LFX_SILHOUETTE)
+    {
+        PAL_fadeOut(0, 15, 10, FALSE);
+    }
+    else 
+    {
+        PAL_setColors(0, ActivePage->BG->palette->data, 16, DMA_QUEUE);
+    }
+
+    return;
+}
+
+/// @brief Set and draw the background image or just set it if its the same as the last image
 void set_BG()
 {
     if (!bRedrawBG)
@@ -50,24 +87,12 @@ void set_BG()
 
     SkipDrawBG:
 
-    if (ActivePage->EffectBG & LFX_SILHOUETTE)
-    {
-        PAL_fadeOut(0, 15, 10, FALSE);
-    }
-    else
-    {
-        if (ActivePage->EffectBG & LFX_FADEIN)
-            PAL_fadeIn(0, 15, ActivePage->BG->palette->data, 20, FALSE);
-        else
-            PAL_setColors(0, ActivePage->BG->palette->data, 16, DMA_QUEUE);
-    }
-
     if (ActivePage->BG != NULL) LastBG = ActivePage->BG;
         
     return;
 }
 
-/// @brief Draw foreground image and set palette colors
+/// @brief Set and draw the foreground image or just set it if its the same as the last image
 void set_FG()
 {
     if (!bRedrawFG)
@@ -85,18 +110,6 @@ void set_FG()
 
     SkipDrawFG:
 
-    if (ActivePage->EffectFG & LFX_SILHOUETTE)
-    {
-        PAL_fadeOut(16, 31, 10, FALSE);
-    }
-    else
-    {
-        if (ActivePage->EffectFG & LFX_FADEIN)
-            PAL_fadeIn(16, 31, ActivePage->FG->palette->data, 20, FALSE);
-        else
-            PAL_setColors(16, ActivePage->FG->palette->data, 16, DMA_QUEUE);
-    }
-
     if (ActivePage->FG != NULL) LastFG = ActivePage->FG;
 
     return;
@@ -111,6 +124,8 @@ void ExecuteScript()
     Script_SetVar("p.line[2]", ActivePage->TextLine[1]);
     Script_SetVar("p.line[3]", ActivePage->TextLine[2]);
     Script_SetVar("p.line[4]", ActivePage->TextLine[3]);
+
+    Script_SetVar("i.buf", InputBuffer);
 
     // You saw nothing... >:(
     itoa(BUF_NextPtr[0], (s32)ActivePage->NextPage[0]);
@@ -151,32 +166,42 @@ void setTextBoxVisibility(bool bVisible)
     VDP_setHilightShadow(bVisible);
 }
 
-/// @brief Draw BG/FG, setup effects and print page text
+/// @brief Call BG/FG/Palette drawing functions and set the new effects for the current page
+void DrawNext()
+{
+    set_FG();
+    set_BG();
+
+    SYS_disableInts();
+
+    set_Palettes();
+
+    // Don't shake screen again if bRedraw is true
+    SetEffects(PL_BG, (ActivePage->EffectBG & (bRedrawBG?(~LFX_SHAKELR):0xFFFFFFF) ));
+    SetEffects(PL_FG, (ActivePage->EffectFG & (bRedrawFG?(~LFX_SHAKELR):0xFFFFFFF) ));
+
+    if (bRedrawBG || bRedrawFG)
+    {
+        bRedrawBG = FALSE;
+        bRedrawFG = FALSE;
+    }
+
+    setTextBoxVisibility(ActivePage->bTextbox);
+
+    SYS_enableInts();
+
+    return;
+}
+
+/// @brief Simple page which just prints page text
 void DrawPage()
 {
     u16 tmp_textdelay;
 
-    set_FG();
-    set_BG();
+    if (bInstantText) tmp_textdelay = 0;
+    else tmp_textdelay = VNS_TextDelay;
 
-    if (bRedrawBG || bRedrawFG)
-    {
-        tmp_textdelay = 0;
-
-        bRedrawBG = FALSE;
-        bRedrawFG = FALSE;
-    }
-    else
-    {
-        SetEffects(PL_BG, ActivePage->EffectBG);
-        SetEffects(PL_FG, ActivePage->EffectFG);
-
-        tmp_textdelay = VNS_TextDelay;
-    }
-
-    SYS_doVBlankProcess();
-
-    setTextBoxVisibility(ActivePage->bTextbox);
+    DrawNext();
 
     PrintTextLine(BUF_Name, 1, 0, 0);
 
@@ -184,31 +209,17 @@ void DrawPage()
     PrintTextLine(BUF_TextLine[1], 1, 2, tmp_textdelay);
     PrintTextLine(BUF_TextLine[2], 1, 3, tmp_textdelay);
     PrintTextLine(BUF_TextLine[3], 1, 4, tmp_textdelay);
+
+    return;
 }
 
-/// @brief Draw BG/FG, setup effects and print choice text
+/// @brief Print choice page text and show portrait sprites
 void DrawChoice()
 {
     u8 cIdx = 0;
     cCnt = 0;
-
-    set_FG();
-    set_BG();
-
-    if (bRedrawBG || bRedrawFG)
-    {
-        bRedrawBG = FALSE;
-        bRedrawFG = FALSE;
-    }
-    else
-    {
-        SetEffects(PL_BG, ActivePage->EffectBG);
-        SetEffects(PL_FG, ActivePage->EffectFG);
-    }
-
-    SYS_doVBlankProcess();
-
-    setTextBoxVisibility(ActivePage->bTextbox);
+    
+    DrawNext();
 
     VDP_setSpriteLink(20, 21);  // Enable extra portrait sprites
 
@@ -221,6 +232,21 @@ void DrawChoice()
     if (ActivePage->NextPage[cIdx] != NULL){ PrintTextLine(ActivePage->TextLine[cIdx], 9, cIdx+1, 0); cCnt++;} cIdx++;
     if (ActivePage->NextPage[cIdx] != NULL){ PrintTextLine(ActivePage->TextLine[cIdx], 9, cIdx+1, 0); cCnt++;} cIdx++;
     if (ActivePage->NextPage[cIdx] != NULL){ PrintTextLine(ActivePage->TextLine[cIdx], 9, cIdx+1, 0); cCnt++;} cIdx++;
+
+    return;
+}
+
+void GetInput()
+{
+    const char *argv[2] =
+    {
+        ActivePage->TextLine[0],
+        ActivePage->TextLine[1]
+    };
+
+    ChangeState(GS_TEXTINPUT, 2, argv);
+
+    return;
 }
 
 /// @brief Clear last page/choice screen and get the next page/choice
@@ -228,72 +254,64 @@ void PrepareNext()
 {
     const VN_Page *NextPage = NULL;
 
+    ClearTextArea();
+    bInstantText = FALSE;
+
     if (ActivePage->PageType == PAGETYPE_PAGE)
     {
         VDP_setSpritePosition(0, 156, 256);
         MoreArrowCounter = 32;
 
-        ClearTextArea();
-
-        if ((ActivePage->EffectBG & LFX_FADEOUT) && (ActivePage->EffectFG & LFX_FADEOUT))
-        {
-            setTextBoxVisibility(FALSE);
-        }
-
-        waitMs(500);
-
-        if (ActivePage->EffectBG & LFX_FADEOUT) PAL_fadeOut(0, 15, 20, FALSE);
-        if (ActivePage->EffectFG & LFX_FADEOUT) PAL_fadeOut(16, 31, 20, FALSE);
-
-        if (ActivePage->SwitchDelay)
-        {
-            VDP_clearPlane(BG_B, TRUE);
-            VDP_clearPlane(BG_A, TRUE);
-
-            waitMs(ActivePage->SwitchDelay);
-        }
-
         NextPage = ActivePage->NextPage[0];
     }
     else if (ActivePage->PageType == PAGETYPE_CHOICE)
-    {
-        ClearTextArea();
-        
+    {        
         //DMA_doVRamFill(0x7D9*32, 0xC0, 0, 1);
         VDP_setSpriteLink(20, 0);   // Disable extra portrait sprites
         VDP_updateSprites(23, CPU);
 
-        if ((ActivePage->EffectBG & LFX_FADEOUT) && (ActivePage->EffectFG & LFX_FADEOUT))
-        {
-            setTextBoxVisibility(FALSE);
-        }
-
-        if (ActivePage->EffectBG & LFX_FADEOUT) PAL_fadeOut(0, 15, 20, FALSE);
-        if (ActivePage->EffectFG & LFX_FADEOUT) PAL_fadeOut(16, 31, 20, FALSE);
-
-        if (ActivePage->SwitchDelay)
-        {
-            waitMs(ActivePage->SwitchDelay);
-        }
+        PAL_setColors(48, palette_black, 12, DMA_QUEUE);
 
         NextPage = ActivePage->NextPage[sIdx];
     }
-
-    ResetEffect();  // TODO: Don't reset if the next page has the same effects!
-
-    if (NextPage != NULL)
+    else if (ActivePage->PageType == PAGETYPE_INPUT)
     {
-        memcpy(ActivePage, NextPage, sizeof(VN_Page));
-        return;
+        NextPage = ActivePage->NextPage[0];
     }
-    else 
+
+    if ((ActivePage->EffectBG & LFX_FADEOUT) && (ActivePage->EffectFG & LFX_FADEOUT))
+    {
+        setTextBoxVisibility(FALSE);
+    }
+
+    waitMs(500);
+    
+    SYS_disableInts();
+
+    if (ActivePage->EffectBG & LFX_FADEOUT) PAL_fadeOut(0, 15, 20, FALSE);
+    if (ActivePage->EffectFG & LFX_FADEOUT) PAL_fadeOut(16, 47, 20, FALSE);
+
+    if (ActivePage->SwitchDelay)
+    {
+        waitMs(ActivePage->SwitchDelay);
+    }
+    
+    if (NextPage == NULL) 
     {
         KLog("NextPage is NULL!");
+        SYS_enableInts();
         ChangeState(GS_CRASH, 0, NULL);
         return;
     }
 
-    SYS_doVBlankProcess();
+    SemiResetEffect(PL_BG, NextPage->EffectBG);
+    SemiResetEffect(PL_FG, NextPage->EffectFG);
+
+    memcpy(ActivePage, NextPage, sizeof(VN_Page));
+
+    SYS_enableInts();
+
+    return;
 }
 
 /// @brief Initialize and setup everything needed for the scene state
@@ -364,9 +382,11 @@ void SetupState()
     
     VDP_updateSprites(23, DMA_QUEUE);
     SYS_doVBlankProcess();
+    
+    return;
 }
 
-void Enter_Scene(u8 argc, char *argv[])
+void Enter_Scene(u8 argc, const char *argv[])
 {
     KLog("Entering scene");
 
@@ -411,9 +431,6 @@ void ReEnter_Scene()
 
     SetupState();
 
-    //ActivePage->BG = LastBG;
-    //ActivePage->FG = LastFG;
-
     bRedrawBG = TRUE;
     bRedrawFG = TRUE;
 
@@ -423,11 +440,17 @@ void ReEnter_Scene()
     break;
 
     case PAGETYPE_PAGE:
+        bInstantText = TRUE;
         DrawPage();
     break;
 
     case PAGETYPE_CHOICE:
+        bInstantText = TRUE;
         DrawChoice();
+    break;
+
+    case PAGETYPE_INPUT:
+        bSwitchPage = TRUE;
     break;
 
     default:
@@ -464,7 +487,7 @@ void Run_Scene()
 
         switch (ActivePage->PageType)
         {
-        case PAGETYPE_NULL:            
+        case PAGETYPE_NULL:
         break;
 
         case PAGETYPE_PAGE:
@@ -473,6 +496,10 @@ void Run_Scene()
 
         case PAGETYPE_CHOICE:
             DrawChoice();
+        break;
+
+        case PAGETYPE_INPUT:
+            GetInput();
         break;
         
         default:
@@ -505,9 +532,11 @@ void Run_Scene()
 
 void Input_Scene(u16 joy, u16 changed, u16 state)
 {
+    if (bSwitchPage) return;
+
     if (changed & state & BUTTON_START)
     {
-        if (bSwitchPage == FALSE) ChangeState(GS_Options, 0, NULL);
+        ChangeState(GS_Options, 0, NULL);
     }
 
     if (ActivePage->PageType == PAGETYPE_CHOICE)
@@ -522,7 +551,7 @@ void Input_Scene(u16 joy, u16 changed, u16 state)
             if (sIdx < (cCnt-1)) sIdx++;
         }
 
-        if (changed & state & (BUTTON_UP | BUTTON_DOWN)) 
+        if (changed & state & (BUTTON_UP | BUTTON_DOWN))
         {
             PrintTextLine(" ", 8, 1, 0);
             PrintTextLine(" ", 8, 2, 0);
@@ -553,4 +582,3 @@ const VN_GameState SceneState =
 {
     Enter_Scene, ReEnter_Scene, Exit_Scene, Run_Scene, Input_Scene, VBlank_Scene
 };
-

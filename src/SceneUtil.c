@@ -99,7 +99,7 @@ TileSet *UnpackTS(const Image *image)
 
     if (TS == NULL)
     {
-        KLog("Failed to unpack tileset (FG)");
+        KLog("Failed to unpack tileset");
         KLog_U1("Largest free block: ", MEM_getLargestFreeBlock());
         KLog_U1("Tileset compression: ", image->tileset->compression);
         return NULL;
@@ -117,7 +117,7 @@ TileMap *UnpackTM(const Image *image)
 
     if (TM == NULL)
     {
-        KLog("Failed to unpack tilemap (FG)");
+        KLog("Failed to unpack tilemap");
         KLog_U1("Largest free block: ", MEM_getLargestFreeBlock());
         KLog_U1("Tilemap compression: ", image->tilemap->compression);
         return NULL;
@@ -227,6 +227,8 @@ void PrintTextLine(const char *str, u8 x, u8 y, u16 delay)
 
         waitMs(delay);
     }
+
+    return;
 }
 
 // Draw portrait on textbox - Do not use images containing flipped tiles!
@@ -234,31 +236,11 @@ void DrawPortrait(const Image *image)
 {
     u8 i = 0;
 
-    TileSet *TS = NULL;
-    
-    if (image->tileset->compression == COMPRESSION_NONE) TS = image->tileset;
-    else TS = unpackTileSet(image->tileset, NULL);
+    TileSet *TS = UnpackTS(image);    
+    if (TS == NULL) return;
 
-    if (TS == NULL)
-    {
-        KLog("Failed to unpack tileset (Portrait)");
-        KLog_U1("Largest free block: ", MEM_getLargestFreeBlock());
-        KLog_U1("Tileset compression: ", image->tileset->compression);
-        return;
-    }
-
-    TileMap *TM = NULL;
-    
-    if (image->tilemap->compression == COMPRESSION_NONE) TM = image->tilemap;
-    else TM = unpackTileMap(image->tilemap, NULL);
-
-    if (TM == NULL)
-    {
-        KLog("Failed to unpack tilemap (Portrait)");
-        KLog_U1("Largest free block: ", MEM_getLargestFreeBlock());
-        KLog_U1("Tileset compression: ", image->tileset->compression);
-        return;
-    }
+    TileMap *TM = UnpackTM(image);    
+    if (TM == NULL) return;
 
     PAL_setColors(48, image->palette->data, 12, DMA_QUEUE);
 
@@ -274,12 +256,18 @@ void DrawPortrait(const Image *image)
     SYS_doVBlankProcess();
     MEM_free(TS);
     MEM_free(TM);
+
+    return;
 }
 
 void ClearTextArea()
 {
+    SYS_disableInts();
     DMA_doVRamFill(SPR_BANK0*32, 0x1000, 0, 1);
     DMA_waitCompletion();
     DMA_doVRamFill(SPR_BANK1*32, 0x800, 0, 1);
     DMA_waitCompletion();
+    SYS_enableInts();
+
+    return;
 }

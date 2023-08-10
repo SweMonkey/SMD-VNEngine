@@ -23,7 +23,7 @@ static u8 tbRed = 0;
 static u8 tbGreen = 0;
 static u8 tbBlue = 0;
 
-void Enter_Options(u8 argc, char *argv[])
+void Enter_Options(u8 argc, const char *argv[])
 {
     KLog("Entering options");
 

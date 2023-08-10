@@ -62,7 +62,6 @@ void FX_LineGlitch(PageLayer Layer)
     }
 
     DelayTimer[Layer]++;
-
     VDP_setHorizontalScrollLine((Layer==PL_FG?BG_A:BG_B), 0, LineTable[Layer], 224, DMA);
 }
 
@@ -84,7 +83,6 @@ void FX_ShakeLR(PageLayer Layer)
         VDP_setHorizontalScrollLine((Layer==PL_FG?BG_A:BG_B), 0, LineTable[Layer], 224, DMA);
 
         ActiveEffect[Layer] &= ~LFX_SHAKELR;
-
         ShakeCount[Layer] = 80;
     }
 }
@@ -93,14 +91,18 @@ void FX_ShakeLR(PageLayer Layer)
 /// @param Layer Layer to run the effect on (PL_BG, PL_FG)
 void FX_SineWave(PageLayer Layer)
 {
-    for (u16 i = 0; i < 256; i++)
+    for (u8 i = 0; i < 224; i++)
     {
         LineTable[Layer][i] = sinFix16(i+SineScroll[Layer]);
     }
     
     SineScroll[Layer] += 4;
-
     VDP_setHorizontalScrollLine((Layer==PL_FG?BG_A:BG_B), 0, LineTable[Layer], 224, DMA);
+}
+
+void CalcEffect()
+{
+    
 }
 
 /// @brief This function ticks the active effects and should be run from a VBlank handler.
@@ -111,10 +113,8 @@ void RunEffectVSYNC()
         bEffectRunning[l] = TRUE;
 
         if (ActiveEffect[l] & LFX_LINEGLITCH) FX_LineGlitch(l);
-
-        if (ActiveEffect[l] & LFX_SHAKELR) FX_ShakeLR(l);
-
-        if (ActiveEffect[l] & LFX_SINEWAVE) FX_SineWave(l);
+        else if (ActiveEffect[l] & LFX_SHAKELR) FX_ShakeLR(l);
+        else if (ActiveEffect[l] & LFX_SINEWAVE) FX_SineWave(l);
     }
 }
 
@@ -140,7 +140,24 @@ void ResetEffect()
         }
 
         //SineScroll[l] = random() % 256;
-
         ActiveEffect[l] = 0;
     }
+}
+
+void SemiResetEffect(PageLayer Layer, LayerEffect NewEffects)
+{
+    if (((NewEffects          & (LFX_SHAKELR | LFX_LINEGLITCH | LFX_SINEWAVE)) & 
+         (ActiveEffect[Layer] & (LFX_SHAKELR | LFX_LINEGLITCH | LFX_SINEWAVE))) == 0)
+    {
+        if (bEffectRunning[Layer])
+        {
+            memsetU16((u16*)LineTable[Layer], 0, 224);
+            VDP_setHorizontalScrollLine((Layer==PL_FG?BG_A:BG_B), 0, LineTable[Layer], 224, DMA);
+
+            bEffectRunning[Layer] = FALSE;
+        }
+
+        ActiveEffect[Layer] = 0;
+    }
+    else ActiveEffect[Layer] = NewEffects;
 }

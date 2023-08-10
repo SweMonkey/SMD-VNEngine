@@ -11,6 +11,8 @@ int main(bool hardReset)
     VDP_setEnable(FALSE);
     SYS_disableInts();
 
+    if (IS_PAL_SYSTEM) VDP_setScreenHeight240();
+
     SYS_setInterruptMaskLevel(2);
 
     VDP_setPlaneSize(64, 32, FALSE);

@@ -20,7 +20,7 @@
 #define ELSE 0xC
 #define NOPE 0xFF
 
-const char *opcodes[DEF_NUM_OPCODE] =
+const char *OpCodeStr[DEF_NUM_OPCODE] =
 {
     "setv",
     "addv",
@@ -199,7 +199,7 @@ u16 GetOP(char *line)
 
     while (i < DEF_NUM_OPCODE)
     {
-        if (strcmp(opstr, opcodes[i]) == 0)
+        if (strcmp(opstr, OpCodeStr[i]) == 0)
         {
             return i;
             break;
@@ -401,7 +401,8 @@ void Script_Execute(const char *script)
         //kprintf("VM SR: $%08lX - OP: %s - Skip: %s", StatusRegister, opcodes[GET_SR(SR_LOP)], (GET_SR(SR_SKP) == 0 ? "no":"yes"));
     }
 
-    free(ret);
+    free(ret);    
+    return;
 }
 
 /// @brief Add a variable to the VM (Warning: Does not check for existing variable with the same name)
@@ -434,11 +435,13 @@ void Script_DeleteVariables()
 
         free(VarList[i]);
     }
+
+    return;
 }
 
 /// @brief Set VM variable value. The variable is created if it does not exist.
 /// @param name Name of the variable to set
-/// @param value New variable value
+/// @param value New value of variable
 void Script_SetVar(const char *name, const char *value)
 {
     for (u8 n = 0; n < NumVar; n++)

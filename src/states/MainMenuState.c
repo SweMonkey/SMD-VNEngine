@@ -25,7 +25,15 @@ void Menu_Options()
 
 void Menu_Debug()
 {
-    ChangeState(GS_DEBUG, 0, NULL);
+    //ChangeState(GS_DEBUG, 0, NULL);
+
+    const char *argv[2] =
+    {
+        "Input:",
+        "16"
+    };
+
+    ChangeState(GS_TEXTINPUT, 2, argv);
 }
 
 static struct s_menu
@@ -93,7 +101,7 @@ void DrawMenu(u8 idx)
     if (func != NULL) func();
 }
 
-void Enter_MainMenu(u8 argc, char *argv[])
+void Enter_MainMenu(u8 argc, const char *argv[])
 {
     PAL_setPalette(PAL0, palette_black, CPU);
     PAL_setPalette(PAL1, palette_black, CPU);
@@ -112,6 +120,7 @@ void Enter_MainMenu(u8 argc, char *argv[])
     PAL_setColor(61, 0xEEE); // Text FG
 
     KLog("Entering main menu");
+
     DrawMenu(0);
 
     return;

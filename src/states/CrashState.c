@@ -2,7 +2,7 @@
 #include "GameState.h"
 #include "../res/system.h"
 
-void Enter_Crash(u8 argc, char *argv[])
+void Enter_Crash(u8 argc, const char *argv[])
 {    
     PAL_setPalette(PAL0, palette_black, CPU);
     PAL_setPalette(PAL1, palette_black, CPU);

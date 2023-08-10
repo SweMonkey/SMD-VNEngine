@@ -7,6 +7,7 @@ extern VN_GameState OptionsState;
 extern VN_GameState SceneState;
 extern VN_GameState CrashState;
 extern VN_GameState DebugStateState;
+extern VN_GameState TextInputState;
 
 static VN_GameState *CurrentState = &DummyState;
 static VN_GameState *PrevState = &DummyState;
@@ -15,7 +16,7 @@ static GameState CurrentStateEnum = GS_Dummy;
 static GameState PrevStateEnum = GS_Dummy;
 
 
-void ChangeState(GameState new_state, u8 argc, char *argv[])
+void ChangeState(GameState new_state, u8 argc, const char *argv[])
 {
     PrevState = CurrentState;
     PrevStateEnum = CurrentStateEnum;
@@ -61,6 +62,12 @@ void ChangeState(GameState new_state, u8 argc, char *argv[])
     case GS_CRASH:
     {
         CurrentState = &CrashState;
+        break;
+    }
+
+    case GS_TEXTINPUT:
+    {
+        CurrentState = &TextInputState;
         break;
     }
     

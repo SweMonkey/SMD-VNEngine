@@ -5,11 +5,23 @@
 const char *LineModScript[] =
 {
 "\
+defv view, 1\n\
+setv str1, \"You have seen this screen \"\n\
+ieql view, 1\n\
+setv str2, \" time\"\n\
+else\n\
+setv str2, \" times\"\n\
+iend\n\
+cats str1, view\n\
+cats str1, str2\n\
 setv p.name, \"Someone\"\n\
-setv p.line[1], \"Line1\"\n\
+setv p.line[1], \"Hello \"\n\
+cats p.line[1], i.buf\n\
+cats p.line[1], \"!\"\n\
 setv p.line[2], \"Line2\"\n\
 setv p.line[3], \"Line3\"\n\
-setv p.line[4], \"Line4\"\n\
+setv p.line[4], str1\n\
+addv view, 1\n\
 \0"
 };
 
@@ -25,24 +37,80 @@ const VN_Character CyberAnomalie =
     "Cyber anomalie"
 };
 
+const VN_Page PageInput =
+{
+    PAGETYPE_INPUT, // Page Type
+    NULL,           // Character
+
+    NULL,           // BG
+    NULL,           // FG
+
+    FALSE,          // bTextbox
+    (LFX_NONE),     // BG Effects
+    (LFX_NONE),     // FG Effects
+    {
+        "Name\0",
+        "8\0",
+        "\0",
+        "\0"
+    },
+    0,              // Switch delay
+    {               // Next Page
+        &Page01,
+        NULL,
+        NULL,
+        NULL
+    },
+    NULL,           // Script
+    NULL            // Track
+};
+
 const VN_Page Page0 =
 {
     PAGETYPE_PAGE,      // Page Type
     &UnknownFemale,     // Character
 
     &testBG2,           // BG
-    &testFG2,           // FG
+    &MD_FG2,            // FG
 
     TRUE,               // bTextbox
-    (LFX_NONE),         // BG Effects
-    (LFX_SHAKELR),      // FG Effects
+    (LFX_FADEIN),       // BG Effects
+    (LFX_FADEIN),       // FG Effects
     {
         "...\0",
         "oh hi there\0",
         "whats your name?\0",
         "\0"
     },
-    0,                  // Switch delay
+    5,                  // Switch delay
+    {                   // Next Page
+        &PageInput,
+        NULL,
+        NULL,
+        NULL
+    },
+    NULL,               // Script
+    NULL                // Track
+};
+
+const VN_Page Page01 =
+{
+    PAGETYPE_PAGE,      // Page Type
+    &UnknownFemale,     // Character
+
+    &testBG2,           // BG
+    &MD_FG2,            // FG
+
+    TRUE,               // bTextbox
+    (LFX_FADEOUT),      // BG Effects
+    (LFX_FADEOUT),      // FG Effects
+    {
+        "...\0",
+        "...\0",
+        "\0",
+        "\0"
+    },
+    500,                // Switch delay
     {                   // Next Page
         &EntryPage,
         &Page2,
@@ -62,15 +130,15 @@ const VN_Page Page1 =
     &MD_FG1,            // FG
 
     TRUE,               // bTextbox
-    (LFX_LINEGLITCH),   // BG Effects
-    (LFX_LINEGLITCH),   // FG Effects
+    (LFX_FADEIN | LFX_FADEOUT | LFX_LINEGLITCH),   // BG Effects
+    (LFX_FADEIN | LFX_FADEOUT | LFX_LINEGLITCH),   // FG Effects
     {
         "Lorem ipsum dolor sit amet massa nun\0",
         "Aenean nec porta lectus. Sed non dui\0",
         "Ut consectetur scelerisque felis nis\0",
         "Sed ex elit, vestibulum et urna fusc\0"
     },
-    0,                  // Switch delay
+    500,                // Switch delay
     {                   // Next Page
         &EntryPage,
         NULL,
@@ -90,15 +158,15 @@ const VN_Page EntryPage =
     &testFG2,           // FG
 
     TRUE,               // bTextbox
-    (LFX_FADEIN | LFX_FADEOUT), // BG Effects
-    (LFX_FADEIN | LFX_FADEOUT | LFX_SINEWAVE), // FG Effects
+    (LFX_FADEIN | LFX_FADEOUT),                 // BG Effects
+    (LFX_FADEIN | LFX_FADEOUT | LFX_SINEWAVE),  // FG Effects
     {
         "Choice 1 - Script string test\0",
         "Choice 2 - error\0",
         "Choice 3 - FX Tests\0",
         "Choice 4 - This page\0"
     },
-    0,                  // Switch delay
+    500,                // Switch delay
     {                   // Next Page
         &Page0,
         &Page1,
@@ -122,7 +190,7 @@ const VN_Page Page2 =
     NULL,               // FG
 
     TRUE,               // bTextbox
-    (LFX_FADEIN),      // BG Effects
+    (LFX_FADEIN),       // BG Effects
     (LFX_NONE),         // FG Effects
     {
         "FadeIn BG\0",
@@ -130,7 +198,7 @@ const VN_Page Page2 =
         "\0",
         "\0"
     },
-    0,                  // Switch delay
+    250,                // Switch delay
     {                   // Next Page
         &Page3,
         NULL,
@@ -149,15 +217,15 @@ const VN_Page Page3 =
     NULL,               // FG
 
     TRUE,               // bTextbox
-    (LFX_NONE),      // BG Effects
-    (LFX_FADEIN),         // FG Effects
+    (LFX_NONE),         // BG Effects
+    (LFX_FADEIN),       // FG Effects
     {
         "FadeIn FG\0",
         "\0",
         "\0",
         "\0"
     },
-    0,                  // Switch delay
+    250,                // Switch delay
     {                   // Next Page
         &Page4,
         NULL,
@@ -178,14 +246,14 @@ const VN_Page Page4 =
 
     TRUE,               // bTextbox
     (LFX_FADEOUT),      // BG Effects
-    (LFX_NONE),      // FG Effects
+    (LFX_NONE),         // FG Effects
     {
         "FadeOut BG\0",
         "\0",
         "\0",
         "\0"
     },
-    0,                  // Switch delay
+    250,                // Switch delay
     {                   // Next Page
         &Page5,
         NULL,
@@ -205,7 +273,7 @@ const VN_Page Page5 =
     NULL,               // FG
 
     TRUE,               // bTextbox
-    (LFX_NONE),      // BG Effects
+    (LFX_NONE),         // BG Effects
     (LFX_FADEOUT),      // FG Effects
     {
         "FadeOut FG\0",
@@ -213,7 +281,7 @@ const VN_Page Page5 =
         "\0",
         "\0"
     },
-    0,                  // Switch delay
+    250,                // Switch delay
     {                   // Next Page
         &Page6,
         NULL,
@@ -234,14 +302,14 @@ const VN_Page Page6 =
 
     TRUE,               // bTextbox
     (LFX_SHAKELR),      // BG Effects
-    (LFX_NONE),      // FG Effects
+    (LFX_NONE),         // FG Effects
     {
         "ShakeLR BG\0",
         "\0",
         "\0",
         "\0"
     },
-    0,                  // Switch delay
+    250,                // Switch delay
     {                   // Next Page
         &Page7,
         NULL,
@@ -261,7 +329,7 @@ const VN_Page Page7 =
     NULL,               // FG
 
     TRUE,               // bTextbox
-    (LFX_NONE),      // BG Effects
+    (LFX_NONE),         // BG Effects
     (LFX_SHAKELR),      // FG Effects
     {
         "ShakeLR FG\0",
@@ -269,7 +337,7 @@ const VN_Page Page7 =
         "\0",
         "\0"
     },
-    0,                  // Switch delay
+    250,                // Switch delay
     {                   // Next Page
         &Page8,
         NULL,
@@ -289,15 +357,15 @@ const VN_Page Page8 =
     NULL,               // FG
 
     TRUE,               // bTextbox
-    (LFX_LINEGLITCH),      // BG Effects
-    (LFX_NONE),      // FG Effects
+    (LFX_LINEGLITCH),   // BG Effects
+    (LFX_NONE),         // FG Effects
     {
         "LineGlitch BG\0",
         "\0",
         "\0",
         "\0"
     },
-    0,                  // Switch delay
+    250,                // Switch delay
     {                   // Next Page
         &Page9,
         NULL,
@@ -317,15 +385,15 @@ const VN_Page Page9 =
     NULL,               // FG
 
     TRUE,               // bTextbox
-    (LFX_NONE),      // BG Effects
-    (LFX_LINEGLITCH),      // FG Effects
+    (LFX_NONE),         // BG Effects
+    (LFX_LINEGLITCH),   // FG Effects
     {
         "LineGlitch FG\0",
         "\0",
         "\0",
         "\0"
     },
-    0,                  // Switch delay
+    250,                // Switch delay
     {                   // Next Page
         &Page10,
         NULL,
@@ -345,15 +413,15 @@ const VN_Page Page10 =
     NULL,               // FG
 
     TRUE,               // bTextbox
-    (LFX_NONE),      // BG Effects
-    (LFX_SILHOUETTE),      // FG Effects
+    (LFX_NONE),         // BG Effects
+    (LFX_SILHOUETTE),   // FG Effects
     {
         "Silhouette FG\0",
         "\0",
         "\0",
         "\0"
     },
-    0,                  // Switch delay
+    250,                // Switch delay
     {                   // Next Page
         &Page11,
         NULL,
@@ -373,15 +441,15 @@ const VN_Page Page11 =
     NULL,               // FG
 
     TRUE,               // bTextbox
-    (LFX_SINEWAVE),      // BG Effects
-    (LFX_NONE),      // FG Effects
+    (LFX_SINEWAVE),     // BG Effects
+    (LFX_NONE),         // FG Effects
     {
         "SineWave BG\0",
         "\0",
         "\0",
         "\0"
     },
-    0,                  // Switch delay
+    250,                // Switch delay
     {                   // Next Page
         &Page12,
         NULL,
@@ -401,15 +469,15 @@ const VN_Page Page12 =
     NULL,               // FG
 
     TRUE,               // bTextbox
-    (LFX_NONE),      // BG Effects
-    (LFX_SINEWAVE),      // FG Effects
+    (LFX_NONE),         // BG Effects
+    (LFX_SINEWAVE),     // FG Effects
     {
         "SineWave FG\0",
         "\0",
         "\0",
         "\0"
     },
-    0,                  // Switch delay
+    500,                // Switch delay
     {                   // Next Page
         &EntryPage,
         NULL,
