@@ -3,7 +3,7 @@
 #include "../res/system.h"
 
 // External main menu background
-extern const Image MM_BACKGROUND;
+extern const Image IMG_Title;
 
 /// @brief Begin a new game
 void Menu_StartGame()
@@ -25,15 +25,7 @@ void Menu_Options()
 
 void Menu_Debug()
 {
-    //ChangeState(GS_DEBUG, 0, NULL);
-
-    const char *argv[2] =
-    {
-        "Input:",
-        "16"
-    };
-
-    ChangeState(GS_TEXTINPUT, 2, argv);
+    ChangeState(GS_DEBUG, 0, NULL);
 }
 
 static struct s_menu
@@ -108,7 +100,7 @@ void Enter_MainMenu(u8 argc, const char *argv[])
     PAL_setPalette(PAL2, palette_black, CPU);
     PAL_setPalette(PAL3, palette_black, CPU);
 
-    VDP_drawImageEx(BG_B, &MM_BACKGROUND, TILE_ATTR_FULL(PAL0, 0, 0, 0, 1), 1, 1, TRUE, DMA_QUEUE);
+    VDP_drawImageEx(BG_B, &IMG_Title, TILE_ATTR_FULL(PAL0, 0, 0, 0, 1), 1, 1, TRUE, DMA_QUEUE);
 
     VDP_setTextPlane(BG_A);
     VDP_setTextPriority(1);
@@ -134,7 +126,7 @@ void ReEnter_MainMenu()
     return;
 }
 
-void Exit_MainMenu()
+void Exit_MainMenu(GameState new_state)
 {
     VDP_clearPlane(BG_B, TRUE);
     VDP_clearPlane(BG_A, TRUE);
@@ -188,6 +180,6 @@ void VBlank_MainMenu()
 
 const VN_GameState MainMenuState = 
 {
-    Enter_MainMenu, ReEnter_MainMenu, Exit_MainMenu, Run_MainMenu, Input_MainMenu, VBlank_MainMenu
+    Enter_MainMenu, ReEnter_MainMenu, Exit_MainMenu, Run_MainMenu, Input_MainMenu, NULL, VBlank_MainMenu
 };
 

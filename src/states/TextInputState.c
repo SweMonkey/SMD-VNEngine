@@ -55,7 +55,7 @@ static u8 MaxStrLen;        // Desired lenght of InputBuffer string (Max 32)
 char InputBuffer[32] = {'\0'};  // User typed string. To be accessed remotely in other parts
 
 // External background
-extern const Image TI_BACKGROUND;
+extern const Image IMG_TextInput;
 
 void DrawInputText(const char *text, u8 yStart)
 {
@@ -88,7 +88,7 @@ void Enter_TextInput(u8 argc, const char *argv[])
 
     VDP_setHilightShadow(1);
 
-    VDP_drawImageEx(BG_B, &TI_BACKGROUND, TILE_ATTR_FULL(PAL0, 1, 0, 0, 1), 1, 1, TRUE, DMA_QUEUE);
+    VDP_drawImageEx(BG_B, &IMG_TextInput, TILE_ATTR_FULL(PAL0, 1, 0, 0, 1), 1, 1, TRUE, DMA_QUEUE);
     SYS_doVBlankProcess();
 
     PAL_setColor(50, 0x666); // Box Outline
@@ -181,14 +181,14 @@ void ReEnter_TextInput()
 {
 }
 
-void Exit_TextInput()
+void Exit_TextInput(GameState new_state)
 {
     VDP_clearPlane(BG_B, TRUE);
     VDP_clearPlane(BG_A, TRUE);
-    VDP_setHilightShadow(0);
     VDP_setSpriteLink(0, 0);
     VDP_setSpritePosition(0, 32, 320);
     VDP_updateSprites(1, DMA_QUEUE);
+    VDP_setHilightShadow(0);
     InputBuffer[BuffferPos] = '\0';
     SYS_doVBlankProcess();
 }
@@ -286,6 +286,6 @@ void VBlank_TextInput()
 
 const VN_GameState TextInputState = 
 {
-    Enter_TextInput, ReEnter_TextInput, Exit_TextInput, Run_TextInput, Input_TextInput, VBlank_TextInput
+    Enter_TextInput, ReEnter_TextInput, Exit_TextInput, Run_TextInput, Input_TextInput, NULL, VBlank_TextInput
 };
 

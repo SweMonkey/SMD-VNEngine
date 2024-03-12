@@ -27,7 +27,8 @@
 			"sceneutil.h": "c",
 			"system.h": "c",
 			"main.h": "c",
-			"testres.h": "c"
+			"testres.h": "c",
+			"test.h": "c"
 		}
 	}
 }

@@ -1,5 +1,6 @@
 
 #include "SceneUtil.h"
+#include "SceneFX.h"
 #include "../res/system.h"
 
 const u16 CharMap[5][38] =
@@ -221,11 +222,11 @@ void PrintTextLine(const char *str, u8 x, u8 y, u16 delay)
     {
         if (str[current_char] == 0) break;
 
-        VDP_loadTileData(FONT_SCENESH.tiles+((str[current_char]-32)<<3), CharMap[y][px] , 1, DMA); // Many small updates...
+        VDP_loadTileData(FONT_SCENESH.tiles+((str[current_char]-32)<<3), CharMap[y][px] , 1, DMA_QUEUE_COPY); // Many small updates...
 
         px++;
 
-        waitMs(delay);
+        WaitFrames(delay);
     }
 
     return;
@@ -270,4 +271,21 @@ void ClearTextArea()
     SYS_enableInts();
 
     return;
+}
+
+inline void WaitFrames(u16 delay)
+{
+    for (u8 w = 0; w < delay>>3; w++) 
+    {
+        //VN_DoVBlank();
+        FX_RunEffect();
+        SYS_doVBlankProcess();
+    }
+}
+
+inline void VN_DoVBlank()
+{
+    FX_RunEffect();
+    //XGM_nextXFrame(1);
+    SYS_doVBlankProcess();
 }

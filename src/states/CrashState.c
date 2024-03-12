@@ -27,7 +27,7 @@ void ReEnter_Crash()
 {
 }
 
-void Exit_Crash()
+void Exit_Crash(GameState new_state)
 {
 }
 
@@ -51,6 +51,6 @@ void VBlank_Crash()
 
 const VN_GameState CrashState = 
 {
-    Enter_Crash, ReEnter_Crash, Exit_Crash, Run_Crash, Input_Crash, VBlank_Crash
+    Enter_Crash, ReEnter_Crash, Exit_Crash, Run_Crash, Input_Crash, NULL, VBlank_Crash
 };
 

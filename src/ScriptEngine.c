@@ -5,20 +5,20 @@
 #define DEF_MAX_VAR 64          // Number of max variables the VM can hold
 #define DEF_MAX_LINEBUFFER 64   // Number of characters the linebuffer can hold
 
-#define SETV 0x0
-#define ADDV 0x1
-#define SUBV 0x2
-#define MULV 0x3
-#define DIVV 0x4
-#define GOTO 0x5
-#define IEQL 0x6
-#define INEQ 0x7
-#define IEND 0x8
-#define DEFV 0x9
-#define CATS 0xA
-#define DBPR 0xB
-#define ELSE 0xC
-#define NOPE 0xFF
+#define SETV 0x0    // Set <v1> to <v2> - <v1> is created if it does not exist - <v2> must exist or be a constant value
+#define ADDV 0x1    // Add <v2> to <v1>
+#define SUBV 0x2    // Subtract <v2> from <v1>
+#define MULV 0x3    // Multiply <v1> with <v2>
+#define DIVV 0x4    // Divide <v1> by <v2>
+#define GOTO 0x5    // Goto (does nothing)
+#define IEQL 0x6    // If <v1> is equal to <v2> set result bit to 1 otherwise result bit to 0     - if true; execute following code block until iend or else opcode
+#define INEQ 0x7    // If <v1> is not equal to <v2> set result bit to 1 otherwise result bit to 0 - if true; execute following code block until iend or else opcode
+#define IEND 0x8    // End of if block
+#define DEFV 0x9    // Same as setv, except it does not touch <v1> if it already exists
+#define CATS 0xA    // Concatenate string <v2> onto <v1>
+#define DBPR 0xB    // Debug print to emulator log
+#define ELSE 0xC    // If previous if statement was false then execute the following code block, otherwise continue execution after the next iend opcode
+#define NOPE 0xFF   // Illegal OP
 
 const char *OpCodeStr[DEF_NUM_OPCODE] =
 {
@@ -52,6 +52,7 @@ const char *OpCodeStr[DEF_NUM_OPCODE] =
 #define SR_SKP (1<<SR_SKP_SH)  // Bit 18 = Skip next OP if 1
 
 static u32 StatusRegister;
+static char *LineStr = NULL;
 
 VN_ScriptVar *VarList[DEF_MAX_VAR];
 u8 NumVar = 0;
@@ -351,6 +352,8 @@ u32 GetLine(const char *str, char *ret, u32 start, u32 end)
 
         i++;
 
+        if (j >= DEF_MAX_LINEBUFFER) break;
+
         if (i >= end) break;
 
         if ((str[i] == '\0') || (str[i] == '\n')) break;
@@ -363,16 +366,17 @@ u32 GetLine(const char *str, char *ret, u32 start, u32 end)
 /// @param script Pointer to a script
 void Script_Execute(const char *script)
 {
-    char *ret = (char*)malloc(DEF_MAX_LINEBUFFER);
     u32 pos = 0;
     u32 size = strlen(script);
 
+    if (LineStr == NULL) LineStr = (char*)malloc(DEF_MAX_LINEBUFFER);
+
     while (pos < size)
     {
-        memset(ret, '\0', DEF_MAX_LINEBUFFER);
-        pos = GetLine(script, ret, pos, size);
+        memset(LineStr, '\0', DEF_MAX_LINEBUFFER);
+        pos = GetLine(script, LineStr, pos, size);
 
-        if (ret[0] == '\0') continue;
+        if (LineStr[0] == '\0') continue;
 
         // IF (CMP EQUAL OR NOT EQUAL) AND (CMP = FALSE)
         if ( ((GET_SR(SR_LOP) == IEQL) || (GET_SR(SR_LOP) == INEQ)) && (GET_SR(SR_CMP) == 0) )
@@ -380,7 +384,7 @@ void Script_Execute(const char *script)
             SET_SR(SR_SKP);
         }
 
-        if (GetOP(ret) == ELSE)
+        if (GetOP(LineStr) == ELSE)
         {
             if (GET_SR(SR_CMP) == SR_CMP) SET_SR(SR_SKP);
             else if (GET_SR(SR_CMP) == 0) UNSET_SR(SR_SKP);
@@ -388,20 +392,19 @@ void Script_Execute(const char *script)
 
         if (GET_SR(SR_SKP) == 0)
         {
-            ParseLine(ret);
+            ParseLine(LineStr);
         }
-        else if (GetOP(ret) == IEND)
+        else if (GetOP(LineStr) == IEND)
         {
             UNSET_SR(SR_SKP);
         }
 
         UNSET_SR(SR_LOP);
-        SET_SR(GetOP(ret));
+        SET_SR(GetOP(LineStr));
 
         //kprintf("VM SR: $%08lX - OP: %s - Skip: %s", StatusRegister, opcodes[GET_SR(SR_LOP)], (GET_SR(SR_SKP) == 0 ? "no":"yes"));
     }
 
-    free(ret);    
     return;
 }
 
@@ -409,7 +412,7 @@ void Script_Execute(const char *script)
 /// @todo Does not check for existing variable with same name
 /// @param name Name of the new variable
 /// @param value Value of the new variable
-/// @return TRUE if added, FALSE if out of memory slots in VM
+/// @return New pointer to new variable if added or NULL if out of memory slots in VM
 VN_ScriptVar *Script_AddVar(const char *name, const char *value)
 {
     if (NumVar >= DEF_MAX_VAR-1) return NULL;
@@ -435,6 +438,9 @@ void Script_DeleteVariables()
 
         free(VarList[i]);
     }
+
+    free(LineStr);
+    LineStr = NULL;
 
     return;
 }

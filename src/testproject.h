@@ -19,6 +19,8 @@ const VN_Page Page9;
 const VN_Page Page10;
 const VN_Page Page11;
 const VN_Page Page12;
+const VN_Page Page13;
+const VN_Page Page14;
 const VN_Page EntryPage;
 
 #endif // STORY000_H

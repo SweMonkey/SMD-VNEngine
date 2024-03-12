@@ -1,5 +1,5 @@
-#include "test.h"
-#include "../res/testres.h"
+#include "testproject.h"
+#include "../res/testproject.h"
 
 // Dumb script to change all the text lines in a page
 const char *LineModScript[] =
@@ -27,14 +27,26 @@ addv view, 1\n\
 
 const VN_Character UnknownFemale =
 {
-    &img_FS_1,
+    &IMG_FS_000,
     "Unknown Female"
 };
 
 const VN_Character CyberAnomalie =
 {
-    &img_FS_1,
+    &IMG_FS_000,
     "Cyber anomalie"
+};
+
+const VN_Track Track1 =
+{
+    NULL, //MUS_TRACK1,
+    -1
+};
+
+const VN_Track Track2 =
+{
+    NULL, //MUS_TRACK2,
+    -1
 };
 
 const VN_Page PageInput =
@@ -49,7 +61,7 @@ const VN_Page PageInput =
     (LFX_NONE),     // BG Effects
     (LFX_NONE),     // FG Effects
     {
-        "Name\0",
+        "Name:\0",
         "8\0",
         "\0",
         "\0"
@@ -70,8 +82,8 @@ const VN_Page Page0 =
     PAGETYPE_PAGE,      // Page Type
     &UnknownFemale,     // Character
 
-    &testBG2,           // BG
-    &MD_FG2,            // FG
+    &IMG_BG_000,        // BG
+    &IMG_FG_002,        // FG
 
     TRUE,               // bTextbox
     (LFX_FADEIN),       // BG Effects
@@ -98,8 +110,8 @@ const VN_Page Page01 =
     PAGETYPE_PAGE,      // Page Type
     &UnknownFemale,     // Character
 
-    &testBG2,           // BG
-    &MD_FG2,            // FG
+    &IMG_BG_000,        // BG
+    &IMG_FG_002,        // FG
 
     TRUE,               // bTextbox
     (LFX_FADEOUT),      // BG Effects
@@ -126,8 +138,8 @@ const VN_Page Page1 =
     PAGETYPE_PAGE,      // Page Type
     &CyberAnomalie,     // Character
 
-    &MD_BG0,            // BG
-    &MD_FG1,            // FG
+    &IMG_BG_001,        // BG
+    &IMG_FG_001,        // FG
 
     TRUE,               // bTextbox
     (LFX_FADEIN | LFX_FADEOUT | LFX_LINEGLITCH),   // BG Effects
@@ -146,7 +158,7 @@ const VN_Page Page1 =
         NULL
     },
     NULL,   // Script
-    NULL    // Track
+    &Track2 // Track
 };
 
 const VN_Page EntryPage =
@@ -154,8 +166,8 @@ const VN_Page EntryPage =
     PAGETYPE_CHOICE,    // Page Type
     &UnknownFemale,     // Character
 
-    &testBG2,           // BG
-    &testFG2,           // FG
+    &IMG_BG_000,        // BG
+    &IMG_FG_000,        // FG
 
     TRUE,               // bTextbox
     (LFX_FADEIN | LFX_FADEOUT),                 // BG Effects
@@ -174,7 +186,7 @@ const VN_Page EntryPage =
         &EntryPage
     },
     NULL,   // Script
-    NULL    // Track
+    NULL//&Track1 // Track
 };
 
 
@@ -473,6 +485,62 @@ const VN_Page Page12 =
     (LFX_SINEWAVE),     // FG Effects
     {
         "SineWave FG\0",
+        "\0",
+        "\0",
+        "\0"
+    },
+    500,                // Switch delay
+    {                   // Next Page
+        &Page13,
+        NULL,
+        NULL,
+        NULL
+    },
+    NULL,   // Script
+    NULL    // Track
+};
+
+const VN_Page Page13 =
+{
+    PAGETYPE_PAGE,      // Page Type
+    &UnknownFemale,     // Character
+
+    NULL,               // BG
+    NULL,               // FG
+
+    TRUE,               // bTextbox
+    (LFX_NONE),         // BG Effects
+    (LFX_SLIDEOUT),     // FG Effects
+    {
+        "SlideOut FG\0",
+        "\0",
+        "\0",
+        "\0"
+    },
+    500,                // Switch delay
+    {                   // Next Page
+        &Page14,
+        NULL,
+        NULL,
+        NULL
+    },
+    NULL,   // Script
+    NULL    // Track
+};
+
+const VN_Page Page14 =
+{
+    PAGETYPE_PAGE,      // Page Type
+    &UnknownFemale,     // Character
+
+    NULL,               // BG
+    NULL,               // FG
+
+    TRUE,               // bTextbox
+    (LFX_FADEOUT),                  // BG Effects
+    (LFX_FADEOUT | LFX_SLIDEIN),    // FG Effects
+    {
+        "SlideIn FG\0",
         "\0",
         "\0",
         "\0"

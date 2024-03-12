@@ -5,6 +5,7 @@
 #include "../res/system.h"
 
 #define BUF_MAX_STRLEN 40
+//#define NO_INT
 
 // Entry point to begin running from
 extern const VN_Page EntryPage;
@@ -15,6 +16,8 @@ static const Image *LastFG = NULL;
 static bool bRedrawBG = FALSE;
 static bool bRedrawFG = FALSE;
 static bool bInstantText = FALSE;
+
+static const VN_Track *LastTrack = NULL;
 
 // Temporary buffer variables
 static char BUF_Name[BUF_MAX_STRLEN];
@@ -35,36 +38,41 @@ static u8 MoreArrowCounter = 32;
 static u8 sIdx = 0; // Choice selection index
 static u8 cCnt = 0; // Choice count
 
+
 /// @brief Set the new palette depending on page FX (Fade In/Out or Set)
 void set_Palettes()
 {
     // Foreground
     if ((ActivePage->EffectFG & LFX_FADEIN) && (!bRedrawFG))
     {
-        PAL_fadeIn(16, 47, ActivePage->FG->palette->data, 20, FALSE);
+        PAL_fadeIn(16, 47, ActivePage->FG->palette->data, 20, TRUE);
     }
     else if (ActivePage->EffectFG & LFX_SILHOUETTE)
     {
-        PAL_fadeOut(16, 47, 10, FALSE);
+        PAL_fadeOut(16, 47, 10, TRUE);
     }
     else 
     {
         PAL_setColors(16, ActivePage->FG->palette->data, 32, DMA_QUEUE);
     }
 
+    PAL_waitFadeCompletion();
+
     // Background
     if ((ActivePage->EffectBG & LFX_FADEIN) && (!bRedrawBG))
     {
-        PAL_fadeIn(0, 15, ActivePage->BG->palette->data, 20, FALSE);
+        PAL_fadeIn(0, 15, ActivePage->BG->palette->data, 20, TRUE);
     }
     else if (ActivePage->EffectBG & LFX_SILHOUETTE)
     {
-        PAL_fadeOut(0, 15, 10, FALSE);
+        PAL_fadeOut(0, 15, 10, TRUE);
     }
     else 
     {
         PAL_setColors(0, ActivePage->BG->palette->data, 16, DMA_QUEUE);
     }
+
+    PAL_waitFadeCompletion();
 
     return;
 }
@@ -169,16 +177,31 @@ void setTextBoxVisibility(bool bVisible)
 /// @brief Call BG/FG/Palette drawing functions and set the new effects for the current page
 void DrawNext()
 {
+    if ((ActivePage->XGM_Track != NULL) && (ActivePage->XGM_Track->TrackPtr != NULL))
+    {
+        if (LastTrack != ActivePage->XGM_Track)
+        {
+            //if (XGM_isPlaying) XGM_stopPlay();
+
+            XGM_setLoopNumber(ActivePage->XGM_Track->Repeat);
+            XGM_startPlay(ActivePage->XGM_Track->TrackPtr);
+
+            LastTrack = ActivePage->XGM_Track;
+        }
+    }
+
     set_FG();
     set_BG();
 
-    SYS_disableInts();
+#ifndef NO_INT
+//    SYS_disableInts();
+#endif
 
     set_Palettes();
 
     // Don't shake screen again if bRedraw is true
-    SetEffects(PL_BG, (ActivePage->EffectBG & (bRedrawBG?(~LFX_SHAKELR):0xFFFFFFF) ));
-    SetEffects(PL_FG, (ActivePage->EffectFG & (bRedrawFG?(~LFX_SHAKELR):0xFFFFFFF) ));
+    FX_SetEffects(PL_BG, (ActivePage->EffectBG & (bRedrawBG?(~LFX_SHAKELR):0xFFFFFFF) ));
+    FX_SetEffects(PL_FG, (ActivePage->EffectFG & (bRedrawFG?(~LFX_SHAKELR):0xFFFFFFF) ));
 
     if (bRedrawBG || bRedrawFG)
     {
@@ -188,7 +211,9 @@ void DrawNext()
 
     setTextBoxVisibility(ActivePage->bTextbox);
 
-    SYS_enableInts();
+#ifndef NO_INT
+//    SYS_enableInts();
+#endif
 
     return;
 }
@@ -279,17 +304,23 @@ void PrepareNext()
         NextPage = ActivePage->NextPage[0];
     }
 
+    VDP_updateSprites(23, DMA);
+
     if ((ActivePage->EffectBG & LFX_FADEOUT) && (ActivePage->EffectFG & LFX_FADEOUT))
     {
         setTextBoxVisibility(FALSE);
     }
 
-    waitMs(500);
+    //waitMs(500);
     
-    SYS_disableInts();
+#ifndef NO_INT
+//    SYS_disableInts();
+#endif
 
-    if (ActivePage->EffectBG & LFX_FADEOUT) PAL_fadeOut(0, 15, 20, FALSE);
-    if (ActivePage->EffectFG & LFX_FADEOUT) PAL_fadeOut(16, 47, 20, FALSE);
+    //if (ActivePage->EffectBG & LFX_FADEOUT) PAL_fadeOut(0, 15, 20, FALSE);
+    //if (ActivePage->EffectFG & LFX_FADEOUT) PAL_fadeOut(16, 47, 20, FALSE);
+
+    PAL_fadeOut(((ActivePage->EffectBG & LFX_FADEOUT) ? 0  : 16), ((ActivePage->EffectFG & LFX_FADEOUT) ? 47 : 15), 20, TRUE);    
 
     if (ActivePage->SwitchDelay)
     {
@@ -299,17 +330,24 @@ void PrepareNext()
     if (NextPage == NULL) 
     {
         KLog("NextPage is NULL!");
-        SYS_enableInts();
+
+#ifndef NO_INT
+//        SYS_enableInts();
+#endif
         ChangeState(GS_CRASH, 0, NULL);
         return;
     }
 
-    SemiResetEffect(PL_BG, NextPage->EffectBG);
-    SemiResetEffect(PL_FG, NextPage->EffectFG);
+    PAL_waitFadeCompletion();
+
+    FX_SemiResetEffect(PL_BG, NextPage->EffectBG);
+    FX_SemiResetEffect(PL_FG, NextPage->EffectFG);
 
     memcpy(ActivePage, NextPage, sizeof(VN_Page));
 
-    SYS_enableInts();
+#ifndef NO_INT
+//    SYS_enableInts();
+#endif
 
     return;
 }
@@ -334,8 +372,13 @@ void SetupState()
 
     //DMA_setBufferSize(0x2000);
 
+    //VDP_setReg(0, 0x24);
+
     VDP_setScrollingMode(HSCROLL_LINE, VSCROLL_COLUMN);
-    
+
+    Z80_loadDriver(Z80_DRIVER_XGM, TRUE);
+    //XGM_setManualSync(TRUE);
+
     ClearTextArea();
 
     // Top 10 sprites
@@ -392,35 +435,38 @@ void Enter_Scene(u8 argc, const char *argv[])
 
     Script_DeleteVariables();
 
+    LastBG = NULL;
+    LastFG = NULL;
+    bRedrawBG = FALSE;
+    bRedrawFG = FALSE;
+    bInstantText = FALSE;
+
     SetupState();
 
-    if (ActivePage == NULL)
+    if (ActivePage == NULL) ActivePage = (VN_Page*)MEM_alloc(sizeof(VN_Page));
+    memcpy(ActivePage, &EntryPage, sizeof(VN_Page));
+
+    // Cheaty kickstart
+    ExecuteScript();
+
+    switch (ActivePage->PageType)
     {
-        ActivePage = (VN_Page*)MEM_alloc(sizeof(VN_Page));
-        memcpy(ActivePage, &EntryPage, sizeof(VN_Page));
+    case PAGETYPE_NULL:
+    break;
 
-        // Cheaty kickstart
-        ExecuteScript();
+    case PAGETYPE_PAGE:
+        DrawPage();
+    break;
 
-        switch (ActivePage->PageType)
-        {
-        case PAGETYPE_NULL:
-        break;
+    case PAGETYPE_CHOICE:
+        DrawChoice();
+    break;
 
-        case PAGETYPE_PAGE:
-            DrawPage();
-        break;
-
-        case PAGETYPE_CHOICE:
-            DrawChoice();
-        break;
-
-        default:
-        break;
-        }
-
-        bSwitchPage = FALSE;
+    default:
+    break;
     }
+
+    bSwitchPage = FALSE;
 
     return;
 }
@@ -430,6 +476,8 @@ void ReEnter_Scene()
     KLog("RE Entering scene");
 
     SetupState();
+
+    if (XGM_isPlaying()) XGM_resumePlay();
 
     bRedrawBG = TRUE;
     bRedrawFG = TRUE;
@@ -460,7 +508,7 @@ void ReEnter_Scene()
     return;
 }
 
-void Exit_Scene()
+void Exit_Scene(GameState new_state)
 {
     KLog("Exiting scene");
 
@@ -471,7 +519,13 @@ void Exit_Scene()
     VDP_clearPlane(BG_B, TRUE);
     VDP_clearPlane(BG_A, TRUE);
 
-    ResetEffect();
+    FX_ResetEffect();
+
+    if ((new_state != GS_TEXTINPUT) && (new_state != GS_Options))
+    {
+        XGM_pausePlay();
+        KLog("Pausing music");
+    }
 
     SYS_doVBlankProcess();
 
@@ -527,6 +581,10 @@ void Run_Scene()
     {
     }
 
+    if (bSwitchPage == FALSE) FX_RunEffect();
+    
+    //XGM_nextXFrame(1);
+
     return;
 }
 
@@ -573,12 +631,19 @@ void VBlank_Scene()
 {
     VDP_updateSprites(23, DMA);
 
-    RunEffectVSYNC();
+    FX_UpdateScroll();
+
+    //XGM_nextFrame();
+    
+    //PAL_setColors(0, ActivePage->BG->palette->data, 16, CPU);
+    //PAL_setColors(16, ActivePage->FG->palette->data, 32, CPU);
+
+    //if (bSwitchPage) RunEffectVSYNC();  // Keep animating FX during text render/Page switch
 
     return;
 }
 
 const VN_GameState SceneState = 
 {
-    Enter_Scene, ReEnter_Scene, Exit_Scene, Run_Scene, Input_Scene, VBlank_Scene
+    Enter_Scene, ReEnter_Scene, Exit_Scene, Run_Scene, Input_Scene, NULL, VBlank_Scene
 };

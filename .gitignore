@@ -1,9 +1,7 @@
 out/
 tmp/
 res/test/
-
-res/testres.h
-res/testres.res
+res/*.h
 
 .directory
 .vscode

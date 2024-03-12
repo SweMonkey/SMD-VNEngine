@@ -11,7 +11,7 @@
 #define PAGETYPE_CHOICE 2
 #define PAGETYPE_INPUT 3
 
-typedef enum e_pagelayer{PL_BG = 0, PL_FG = 1} PageLayer;
+typedef enum e_pagelayer{PL_BG = BG_B, PL_FG = BG_A} PageLayer;
 
 typedef enum e_effect{LFX_NONE          = 0, 
                       LFX_FADEIN        = 0x1,
@@ -26,7 +26,7 @@ typedef enum e_effect{LFX_NONE          = 0,
 typedef struct s_music
 {
     const u8 *TrackPtr;
-    const s8 *Repeat; 
+    const s8 Repeat; 
 } VN_Track;
 
 typedef struct s_character
@@ -66,5 +66,7 @@ bool DrawImageBG(const Image *image);
 void PrintTextLine(const char *str, u8 x, u8 y, u16 delay);
 void DrawPortrait(const Image *image);
 void ClearTextArea();
+void WaitFrames(u16 delay);
+void VN_DoVBlank();
 
 #endif // SCENEUTIL_H

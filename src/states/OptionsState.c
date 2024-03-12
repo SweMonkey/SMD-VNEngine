@@ -23,11 +23,14 @@ static u8 tbRed = 0;
 static u8 tbGreen = 0;
 static u8 tbBlue = 0;
 
+
 void Enter_Options(u8 argc, const char *argv[])
 {
     KLog("Entering options");
 
     VDP_setHilightShadow(0);
+
+    sIdx = 0;
 
     tdDiv = VNS_TextDelay >> 3;
     tbRed = 7-((VNS_TextBoxColor >> 1) & 7);
@@ -46,7 +49,7 @@ void Enter_Options(u8 argc, const char *argv[])
     PAL_setColor(61, 0xEEE); // Text FG
 
     // Draw background
-    VDP_drawImageEx(BG_B, &OPT_BG, TILE_ATTR_FULL(PAL2, 0, 0, 0, 1), 0, 0, TRUE, DMA_QUEUE);
+    VDP_drawImageEx(BG_B, &IMG_Options, TILE_ATTR_FULL(PAL2, 0, 0, 0, 1), 0, 0, TRUE, DMA_QUEUE);
 
     VDP_loadTileData(CPE_Tile, 0x6ED, 1, DMA_QUEUE);
     VDP_loadTileData(CP_Tile, 0x6EE, 1, DMA_QUEUE);
@@ -103,7 +106,8 @@ void Enter_Options(u8 argc, const char *argv[])
     c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbGreen) ? 0x5BE : 0)), 13+c, 13);
     c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbBlue) ? 0x5BE : 0)), 13+c, 14);
 
-    VDP_drawText("(B) Return", 3, 16);
+    VDP_drawText("Exit to main menu", 3, 16);
+    VDP_drawText("Return", 3, 17);
     
     return;
 }
@@ -115,7 +119,7 @@ void ReEnter_Options()
     return;
 }
 
-void Exit_Options()
+void Exit_Options(GameState new_state)
 {
     KLog("Exiting options");
     VDP_clearPlane(BG_B, TRUE);
@@ -232,7 +236,10 @@ void Run_Options()
             waitMs(33);
         break;
 
-        case 10: // Return
+        case 10: // Exit to main menu
+        break;
+
+        case 11: // Return
         break;
 
         default:
@@ -261,7 +268,7 @@ void Input_Options(u16 joy, u16 changed, u16 state)
         else if ((sIdx == 10) && !VNS_TextBoxStyle) sIdx = 3; // Jump to Textbox style selector if using transparent textbox
         else if (sIdx == 6) sIdx = 3;   // Jump to Textbox style selector
         else if (sIdx == 3) sIdx = 0;   // Jump to Textspeed selector
-        else if (sIdx == 0) sIdx = 10;   // Jump to bottom choice
+        else if (sIdx == 0) sIdx = 11;   // Jump to bottom choice
         else sIdx--;
     }
 
@@ -273,7 +280,7 @@ void Input_Options(u16 joy, u16 changed, u16 state)
         else if ((sIdx == 3) && VNS_TextBoxStyle) sIdx = 6;   // Jump to Color picker (red) if using solid textbox
         else if ((sIdx == 3) && !VNS_TextBoxStyle) sIdx = 10;   // Jump to Return if using transparent textbox
         else if (sIdx == 0) sIdx = 3;   // Jump to Textbox style
-        else if (sIdx == 10) sIdx = 0;   // Jump to top choice
+        else if (sIdx == 11) sIdx = 0;   // Jump to top choice
         else sIdx++;
     }
 
@@ -287,9 +294,15 @@ void Input_Options(u16 joy, u16 changed, u16 state)
     }
     else sLR = 0;
 
-    if ((changed & state & BUTTON_B) && (sIdx == 10))
+    if (changed & state & BUTTON_A)
     {
-        RevertState();
+        if (sIdx == 10) 
+        {
+            PAL_fadeOutAll(20, FALSE);
+            ChangeState(GS_MainMenu, 0, NULL);
+        }
+
+        if (sIdx == 11) RevertState();
     }
 
     return;
@@ -302,6 +315,6 @@ void VBlank_Options()
 
 const VN_GameState OptionsState = 
 {
-    Enter_Options, ReEnter_Options, Exit_Options, Run_Options, Input_Options, VBlank_Options
+    Enter_Options, ReEnter_Options, Exit_Options, Run_Options, Input_Options, NULL, VBlank_Options
 };
 

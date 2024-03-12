@@ -4,10 +4,10 @@
 #include <genesis.h>
 #include "SceneUtil.h"
 
-void CalcEffect();
-void RunEffectVSYNC();
-void SetEffects(PageLayer Layer, LayerEffect Effect);
-void ResetEffect();
-void SemiResetEffect(PageLayer Layer, LayerEffect NewEffects);
+void FX_RunEffect();
+void FX_UpdateScroll();
+void FX_SetEffects(PageLayer Layer, LayerEffect Effect);
+void FX_ResetEffect();
+void FX_SemiResetEffect(PageLayer Layer, LayerEffect NewEffects);
 
 #endif // SCENEFX_H 

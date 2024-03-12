@@ -22,8 +22,9 @@ void ChangeState(GameState new_state, u8 argc, const char *argv[])
     PrevStateEnum = CurrentStateEnum;
 
     JOY_setEventHandler(NULL);
+    SYS_setHIntCallback(NULL);
     SYS_setVIntCallback(NULL);
-    CurrentState->Exit();
+    CurrentState->Exit(new_state);
 
     SYS_disableInts();
 
@@ -82,6 +83,7 @@ void ChangeState(GameState new_state, u8 argc, const char *argv[])
 
     CurrentState->Enter(argc, argv);
     JOY_setEventHandler(CurrentState->Input);
+    SYS_setHIntCallback(CurrentState->HBlank);
     SYS_setVIntCallback(CurrentState->VBlank);
     SYS_enableInts();
 }
@@ -92,7 +94,7 @@ void RevertState()
     KLog("Reverting game state...");
     VN_GameState *ShadowState = CurrentState;
 
-    CurrentState->Exit();
+    CurrentState->Exit(PrevStateEnum);
 
     SYS_disableInts();
     
