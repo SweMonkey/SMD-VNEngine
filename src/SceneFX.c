@@ -1,4 +1,3 @@
-
 #include "SceneFX.h"
 
 #define LINETABLE_SIZE 224
@@ -21,6 +20,7 @@ static s16 LineTable[2][LINETABLE_SIZE] = {{0}, {0}};
 // Misc effect status
 static LayerEffect ActiveEffect[2] = {0, 0};
 static bool bEffectRunning[2] = {FALSE, FALSE};
+
 
 /// @brief Effect which (tries to) simulates glitchy lines
 /// @param Layer Layer to run the effect on (PL_BG, PL_FG)
@@ -145,7 +145,7 @@ void FX_RunEffect()
     }
 }
 
-/// @brief This should be run from a VBlank handler
+/// @brief Update effects. This should be run from a VBlank handler
 void FX_UpdateScroll()
 {
     for (u8 l = 0; l < 2; l++)
@@ -187,6 +187,9 @@ void FX_ResetEffect()
     }
 }
 
+/// @brief Reset and cancel effects from old page, but keep the effects in NewEffects going
+/// @param Layer Layer to reset the effect for (PL_BG, PL_FG)
+/// @param Effect New effects to keep active or set as active
 void FX_SemiResetEffect(PageLayer Layer, LayerEffect NewEffects)
 {
     if ((SlideXPos[Layer]) && (NewEffects & LFX_SLIDEIN)) return;

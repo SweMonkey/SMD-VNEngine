@@ -1,7 +1,6 @@
-
 #include "SceneUtil.h"
 #include "SceneFX.h"
-#include "../res/system.h"
+#include "../res/System_res.h"
 
 const u16 CharMap[5][38] =
 {
@@ -91,6 +90,7 @@ u16 VNS_TextBoxColor = 0x222;   // TODO: reimplement?
 static u16 TileIdxFG_End = 1;
 static u16 TileIdxBG_Start = 0x5FF;
 
+
 TileSet *UnpackTS(const Image *image)
 {
     TileSet *TS = NULL;
@@ -127,7 +127,7 @@ TileMap *UnpackTM(const Image *image)
     return TM;
 }
 
-bool DrawImageFG(const Image *image)
+bool DrawImageFG(const Image *image, bool bLowColour)
 {
     if ((1 + image->tileset->numTile >= TileIdxBG_Start)) 
     {
@@ -139,12 +139,15 @@ bool DrawImageFG(const Image *image)
     TileSet *TS = UnpackTS(image);    
     if (TS == NULL) return FALSE;
 
-    VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL1, TRUE, FALSE,FALSE, 0), 0, 0, 40, 21);
-    VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL1, FALSE, FALSE,FALSE, 0), 0, 21, 40, 7);
+    u8 Palette = (bLowColour ? PAL2 : PAL1);
+
+    VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(Palette, TRUE, FALSE,FALSE, 0), 0, 0, 40, 21);
+    VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(Palette, FALSE, FALSE,FALSE, 0), 0, 21, 40, 7);
 
     VDP_loadTileSet(TS, 1, DMA_QUEUE);
 
     SYS_doVBlankProcess();
+    //SYS_doVBlankProcess();
 
     TileIdxFG_End = TS->numTile+1;
 
@@ -162,8 +165,8 @@ bool DrawImageFG(const Image *image)
     if (height > 8) height = 8;   // Clip the height of the lower half of image
 
     // Set top and bottom half of tilemap (Top 20 high prio, bottom 10 low prio)
-    VDP_setTileMapDataRectEx(BG_A, TM->tilemap, TILE_ATTR_FULL(PAL1, TRUE, FALSE, FALSE, 1), offx,  0, TM->w, 22, TM->w, DMA_QUEUE);
-    if (height > 0) VDP_setTileMapDataRectEx(BG_A, TM->tilemap + offsetLo, TILE_ATTR_FULL(PAL1, FALSE, FALSE, FALSE, 1), offx, 22, TM->w, height, TM->w, DMA_QUEUE);
+    VDP_setTileMapDataRectEx(BG_A, TM->tilemap, TILE_ATTR_FULL(Palette, TRUE, FALSE, FALSE, 1), offx,  0, TM->w, 22, TM->w, DMA_QUEUE);
+    if (height > 0) VDP_setTileMapDataRectEx(BG_A, TM->tilemap + offsetLo, TILE_ATTR_FULL(Palette, FALSE, FALSE, FALSE, 1), offx, 22, TM->w, height, TM->w, DMA_QUEUE);
 
     SYS_doVBlankProcess();
 
@@ -181,12 +184,16 @@ bool DrawImageBG(const Image *image)
 
     TileIdxBG_Start = 0x600-image->tileset->numTile;
 
+    // Lockup 1
+    //VDP_clearPlane(BG_B, TRUE); // Clear plane B, because sometimes there is garbage tiles left behind in the tilemap
+
     VDP_fillTileMapRect(BG_B, TILE_ATTR_FULL(PAL0, TRUE, FALSE,FALSE, 0), 0, 0, 40, 21);
     VDP_fillTileMapRect(BG_B, TILE_ATTR_FULL(PAL0, FALSE, FALSE,FALSE, 0), 0, 21, 40, 7);
 
     VDP_loadTileSet(TS, TileIdxBG_Start, DMA_QUEUE);
 
-    SYS_doVBlankProcess();
+    // Lockup 2
+    //SYS_doVBlankProcess();
 
     if (TileIdxBG_Start <= TileIdxFG_End) KLog("Warning: BG image is stomping over FG image!");
 
@@ -275,7 +282,9 @@ void ClearTextArea()
 
 inline void WaitFrames(u16 delay)
 {
-    for (u8 w = 0; w < delay>>3; w++) 
+    u8 d = delay>>3;
+
+    for (u8 w = 0; w < d; w++) 
     {
         //VN_DoVBlank();
         FX_RunEffect();

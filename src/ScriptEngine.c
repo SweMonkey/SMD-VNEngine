@@ -1,4 +1,3 @@
-
 #include "ScriptEngine.h"
 
 #define DEF_NUM_OPCODE 13       // Number of opcodes available
@@ -36,7 +35,6 @@ const char *OpCodeStr[DEF_NUM_OPCODE] =
     "dbpr",
     "else"
 };
-
 
 #define SET_SR(x) (StatusRegister |= x)
 #define UNSET_SR(x) (StatusRegister &= ~x)
@@ -224,7 +222,7 @@ void ParseLine(char *line)
 
     if (opcode == NOPE)
     {
-        KLog("VM Warning: Trying to run NOPE opcode!\n");
+        KLog("VM Warning: Trying to run NOPE opcode!");
         return;
     }
 

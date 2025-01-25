@@ -28,7 +28,9 @@
 			"system.h": "c",
 			"main.h": "c",
 			"testres.h": "c",
-			"test.h": "c"
+			"test.h": "c",
+			"story_res.h": "c",
+			"gamestate.h": "c"
 		}
 	}
 }

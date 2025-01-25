@@ -11,7 +11,7 @@ typedef void StateType_CB(GameState new_state);
 typedef struct s_gamestate
 {
     StateArg_CB *Enter;
-    VoidCallback *ReEnter;  // Return to this context
+    VoidCallback *ReEnter;
     StateType_CB *Exit;
 
     VoidCallback *Run;

@@ -9,10 +9,10 @@ const ROMHeader rom_header = {
 #else
     "SEGA MEGA DRIVE ",
 #endif
-    "(C)SGDK 2021    ",
+    "(C)DECEPTSOFT'25",
     "SMD VN Engine                                   ",
     "SMD VN Engine                                   ",
-    "GM 00000000-00",
+    "GM DSVN2019-13",
     0x000,
     "JD              ",
     0x00000000,
@@ -27,7 +27,7 @@ const ROMHeader rom_header = {
     0xF820,
     0x00200000,
     0x0020FFFF,
-    "            ",                          
-    "SMD VN Engine                           ",
+    "            ",
+    "SMD Visual Novel Engine                 ",
     "JUE             "
 };

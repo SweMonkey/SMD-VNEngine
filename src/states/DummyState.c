@@ -1,5 +1,5 @@
-
 #include "GameState.h"
+
 
 void Enter_Dummy(u8 argc, const char *argv[])
 {

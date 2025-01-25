@@ -1,8 +1,9 @@
-#include "testproject.h"
-#include "../res/testproject.h"
+#include "Story.h"
+#include "../res/Story_res.h"
+#include "../res/System_res.h"
 
-// Dumb script to change all the text lines in a page
-const char *LineModScript[] =
+// Dumb script to change all the text lines in a page and getting player input string
+const char * const LineModScript[] =
 {
 "\
 defv view, 1\n\
@@ -57,7 +58,6 @@ const VN_Page PageInput =
     NULL,           // BG
     NULL,           // FG
 
-    FALSE,          // bTextbox
     (LFX_NONE),     // BG Effects
     (LFX_NONE),     // FG Effects
     {
@@ -74,7 +74,10 @@ const VN_Page PageInput =
         NULL
     },
     NULL,           // Script
-    NULL            // Track
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 
 const VN_Page Page0 =
@@ -85,7 +88,6 @@ const VN_Page Page0 =
     &IMG_BG_000,        // BG
     &IMG_FG_002,        // FG
 
-    TRUE,               // bTextbox
     (LFX_FADEIN),       // BG Effects
     (LFX_FADEIN),       // FG Effects
     {
@@ -101,8 +103,11 @@ const VN_Page Page0 =
         NULL,
         NULL
     },
-    NULL,               // Script
-    NULL                // Track
+    NULL,           // Script
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 
 const VN_Page Page01 =
@@ -113,7 +118,6 @@ const VN_Page Page01 =
     &IMG_BG_000,        // BG
     &IMG_FG_002,        // FG
 
-    TRUE,               // bTextbox
     (LFX_FADEOUT),      // BG Effects
     (LFX_FADEOUT),      // FG Effects
     {
@@ -129,8 +133,11 @@ const VN_Page Page01 =
         NULL,
         NULL
     },
-    LineModScript,      // Script
-    NULL                // Track
+    LineModScript,  // Script
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 
 const VN_Page Page1 =
@@ -141,7 +148,6 @@ const VN_Page Page1 =
     &IMG_BG_001,        // BG
     &IMG_FG_001,        // FG
 
-    TRUE,               // bTextbox
     (LFX_FADEIN | LFX_FADEOUT | LFX_LINEGLITCH),   // BG Effects
     (LFX_FADEIN | LFX_FADEOUT | LFX_LINEGLITCH),   // FG Effects
     {
@@ -150,15 +156,18 @@ const VN_Page Page1 =
         "Ut consectetur scelerisque felis nis\0",
         "Sed ex elit, vestibulum et urna fusc\0"
     },
-    500,                // Switch delay
+    300,                // Switch delay
     {                   // Next Page
         &EntryPage,
         NULL,
         NULL,
         NULL
     },
-    NULL,   // Script
-    &Track2 // Track
+    NULL,           // Script
+    &Track2,        // Track
+    TRUE,           // bTextbox
+    TRUE,           // bHighColourBG
+    TRUE,          // bAutoSwitch
 };
 
 const VN_Page EntryPage =
@@ -166,12 +175,11 @@ const VN_Page EntryPage =
     PAGETYPE_CHOICE,    // Page Type
     &UnknownFemale,     // Character
 
-    &IMG_BG_000,        // BG
-    &IMG_FG_000,        // FG
+    &IMG_BG_003,        // BG
+    &IMG_FG_003,        // FG
 
-    TRUE,               // bTextbox
     (LFX_FADEIN | LFX_FADEOUT),                 // BG Effects
-    (LFX_FADEIN | LFX_FADEOUT | LFX_SINEWAVE),  // FG Effects
+    (LFX_FADEIN | LFX_FADEOUT),  // FG Effects  | LFX_SINEWAVE
     {
         "Choice 1 - Script string test\0",
         "Choice 2 - error\0",
@@ -185,8 +193,11 @@ const VN_Page EntryPage =
         &Page2,
         &EntryPage
     },
-    NULL,   // Script
-    NULL//&Track1 // Track
+    NULL,           // Script
+    NULL,//&Track1  // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 
 
@@ -201,7 +212,6 @@ const VN_Page Page2 =
     NULL,               // BG
     NULL,               // FG
 
-    TRUE,               // bTextbox
     (LFX_FADEIN),       // BG Effects
     (LFX_NONE),         // FG Effects
     {
@@ -217,8 +227,11 @@ const VN_Page Page2 =
         NULL,
         NULL
     },
-    NULL,   // Script
-    NULL    // Track
+    NULL,           // Script
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 const VN_Page Page3 =
 {
@@ -228,7 +241,6 @@ const VN_Page Page3 =
     NULL,               // BG
     NULL,               // FG
 
-    TRUE,               // bTextbox
     (LFX_NONE),         // BG Effects
     (LFX_FADEIN),       // FG Effects
     {
@@ -244,8 +256,11 @@ const VN_Page Page3 =
         NULL,
         NULL
     },
-    NULL,   // Script
-    NULL    // Track
+    NULL,           // Script
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 
 const VN_Page Page4 =
@@ -256,7 +271,6 @@ const VN_Page Page4 =
     NULL,               // BG
     NULL,               // FG
 
-    TRUE,               // bTextbox
     (LFX_FADEOUT),      // BG Effects
     (LFX_NONE),         // FG Effects
     {
@@ -272,8 +286,11 @@ const VN_Page Page4 =
         NULL,
         NULL
     },
-    NULL,   // Script
-    NULL    // Track
+    NULL,           // Script
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 
 const VN_Page Page5 =
@@ -284,7 +301,6 @@ const VN_Page Page5 =
     NULL,               // BG
     NULL,               // FG
 
-    TRUE,               // bTextbox
     (LFX_NONE),         // BG Effects
     (LFX_FADEOUT),      // FG Effects
     {
@@ -300,8 +316,11 @@ const VN_Page Page5 =
         NULL,
         NULL
     },
-    NULL,   // Script
-    NULL    // Track
+    NULL,           // Script
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 
 const VN_Page Page6 =
@@ -312,7 +331,6 @@ const VN_Page Page6 =
     NULL,               // BG
     NULL,               // FG
 
-    TRUE,               // bTextbox
     (LFX_SHAKELR),      // BG Effects
     (LFX_NONE),         // FG Effects
     {
@@ -328,8 +346,11 @@ const VN_Page Page6 =
         NULL,
         NULL
     },
-    NULL,   // Script
-    NULL    // Track
+    NULL,           // Script
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 
 const VN_Page Page7 =
@@ -340,7 +361,6 @@ const VN_Page Page7 =
     NULL,               // BG
     NULL,               // FG
 
-    TRUE,               // bTextbox
     (LFX_NONE),         // BG Effects
     (LFX_SHAKELR),      // FG Effects
     {
@@ -356,8 +376,11 @@ const VN_Page Page7 =
         NULL,
         NULL
     },
-    NULL,   // Script
-    NULL    // Track
+    NULL,           // Script
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 
 const VN_Page Page8 =
@@ -368,7 +391,6 @@ const VN_Page Page8 =
     NULL,               // BG
     NULL,               // FG
 
-    TRUE,               // bTextbox
     (LFX_LINEGLITCH),   // BG Effects
     (LFX_NONE),         // FG Effects
     {
@@ -384,8 +406,11 @@ const VN_Page Page8 =
         NULL,
         NULL
     },
-    NULL,   // Script
-    NULL    // Track
+    NULL,           // Script
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 
 const VN_Page Page9 =
@@ -396,7 +421,6 @@ const VN_Page Page9 =
     NULL,               // BG
     NULL,               // FG
 
-    TRUE,               // bTextbox
     (LFX_NONE),         // BG Effects
     (LFX_LINEGLITCH),   // FG Effects
     {
@@ -412,8 +436,11 @@ const VN_Page Page9 =
         NULL,
         NULL
     },
-    NULL,   // Script
-    NULL    // Track
+    NULL,           // Script
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 
 const VN_Page Page10 =
@@ -424,7 +451,6 @@ const VN_Page Page10 =
     NULL,               // BG
     NULL,               // FG
 
-    TRUE,               // bTextbox
     (LFX_NONE),         // BG Effects
     (LFX_SILHOUETTE),   // FG Effects
     {
@@ -440,8 +466,11 @@ const VN_Page Page10 =
         NULL,
         NULL
     },
-    NULL,   // Script
-    NULL    // Track
+    NULL,           // Script
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 
 const VN_Page Page11 =
@@ -452,7 +481,6 @@ const VN_Page Page11 =
     NULL,               // BG
     NULL,               // FG
 
-    TRUE,               // bTextbox
     (LFX_SINEWAVE),     // BG Effects
     (LFX_NONE),         // FG Effects
     {
@@ -468,8 +496,11 @@ const VN_Page Page11 =
         NULL,
         NULL
     },
-    NULL,   // Script
-    NULL    // Track
+    NULL,           // Script
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 
 const VN_Page Page12 =
@@ -480,7 +511,6 @@ const VN_Page Page12 =
     NULL,               // BG
     NULL,               // FG
 
-    TRUE,               // bTextbox
     (LFX_NONE),         // BG Effects
     (LFX_SINEWAVE),     // FG Effects
     {
@@ -496,8 +526,11 @@ const VN_Page Page12 =
         NULL,
         NULL
     },
-    NULL,   // Script
-    NULL    // Track
+    NULL,           // Script
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 
 const VN_Page Page13 =
@@ -508,7 +541,6 @@ const VN_Page Page13 =
     NULL,               // BG
     NULL,               // FG
 
-    TRUE,               // bTextbox
     (LFX_NONE),         // BG Effects
     (LFX_SLIDEOUT),     // FG Effects
     {
@@ -524,8 +556,11 @@ const VN_Page Page13 =
         NULL,
         NULL
     },
-    NULL,   // Script
-    NULL    // Track
+    NULL,           // Script
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };
 
 const VN_Page Page14 =
@@ -536,7 +571,6 @@ const VN_Page Page14 =
     NULL,               // BG
     NULL,               // FG
 
-    TRUE,               // bTextbox
     (LFX_FADEOUT),                  // BG Effects
     (LFX_FADEOUT | LFX_SLIDEIN),    // FG Effects
     {
@@ -552,6 +586,9 @@ const VN_Page Page14 =
         NULL,
         NULL
     },
-    NULL,   // Script
-    NULL    // Track
+    NULL,           // Script
+    NULL,           // Track
+    TRUE,           // bTextbox
+    FALSE,          // bHighColourBG
+    FALSE,          // bAutoSwitch
 };

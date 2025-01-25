@@ -1,11 +1,9 @@
-
 #include "GameState.h"
 #include "ScriptEngine.h"
 #include "SceneFX.h"
-#include "../res/system.h"
+#include "../res/System_res.h"
 
 #define BUF_MAX_STRLEN 40
-//#define NO_INT
 
 // Entry point to begin running from
 extern const VN_Page EntryPage;
@@ -33,6 +31,7 @@ static VN_Page *ActivePage = NULL;
 
 // Page variables
 static u8 MoreArrowCounter = 32;
+static u16 AutoSwitchCounter = 0;
 
 // Choice variables
 static u8 sIdx = 0; // Choice selection index
@@ -45,15 +44,18 @@ void set_Palettes()
     // Foreground
     if ((ActivePage->EffectFG & LFX_FADEIN) && (!bRedrawFG))
     {
-        PAL_fadeIn(16, 47, ActivePage->FG->palette->data, 20, TRUE);
+        if (ActivePage->bHighColourBG) PAL_fadeIn(32, 47, ActivePage->FG->palette->data, 20, TRUE);
+        else PAL_fadeIn(16, 47, ActivePage->FG->palette->data, 20, TRUE);
     }
     else if (ActivePage->EffectFG & LFX_SILHOUETTE)
     {
-        PAL_fadeOut(16, 47, 10, TRUE);
+        if (ActivePage->bHighColourBG) PAL_fadeOut(32, 47, 10, TRUE);
+        else PAL_fadeOut(16, 47, 10, TRUE);
     }
     else 
     {
-        PAL_setColors(16, ActivePage->FG->palette->data, 32, DMA_QUEUE);
+        if (ActivePage->bHighColourBG) PAL_setColors(32, ActivePage->FG->palette->data, 16, DMA_QUEUE);
+        else PAL_setColors(16, ActivePage->FG->palette->data, 32, DMA_QUEUE);
     }
 
     PAL_waitFadeCompletion();
@@ -61,18 +63,23 @@ void set_Palettes()
     // Background
     if ((ActivePage->EffectBG & LFX_FADEIN) && (!bRedrawBG))
     {
-        PAL_fadeIn(0, 15, ActivePage->BG->palette->data, 20, TRUE);
+        if (ActivePage->bHighColourBG) PAL_fadeIn(0, 31, ActivePage->BG->palette->data, 20, TRUE);
+        else PAL_fadeIn(0, 15, ActivePage->BG->palette->data, 20, TRUE);
     }
     else if (ActivePage->EffectBG & LFX_SILHOUETTE)
     {
-        PAL_fadeOut(0, 15, 10, TRUE);
+        if (ActivePage->bHighColourBG) PAL_fadeOut(0, 31, 10, TRUE);
+        else PAL_fadeOut(0, 15, 10, TRUE);
     }
     else 
     {
-        PAL_setColors(0, ActivePage->BG->palette->data, 16, DMA_QUEUE);
+        if (ActivePage->bHighColourBG) PAL_setColors(0, ActivePage->BG->palette->data, 32, DMA_QUEUE);
+        else PAL_setColors(0, ActivePage->BG->palette->data, 16, DMA_QUEUE);
     }
 
     PAL_waitFadeCompletion();
+
+    SYS_doVBlankProcess();  // Test
 
     return;
 }
@@ -91,7 +98,7 @@ void set_BG()
         }
     }
 
-    DrawImageBG(ActivePage->BG);
+    if (DrawImageBG(ActivePage->BG) == FALSE) KLog("DrawImageBG returned false!");
 
     SkipDrawBG:
 
@@ -114,7 +121,7 @@ void set_FG()
         }
     }
 
-    DrawImageFG(ActivePage->FG);
+    if (DrawImageFG(ActivePage->FG, ActivePage->bHighColourBG) == FALSE) KLog("DrawImageFG returned false!");
 
     SkipDrawFG:
 
@@ -127,7 +134,9 @@ void set_FG()
 void ExecuteScript()
 {
     // Transfer data to VM...
-    Script_SetVar("p.name", ActivePage->Character->Name);
+    if (ActivePage->Character != NULL) Script_SetVar("p.name", ActivePage->Character->Name);
+    else Script_SetVar("p.name", "");
+
     Script_SetVar("p.line[1]", ActivePage->TextLine[0]);
     Script_SetVar("p.line[2]", ActivePage->TextLine[1]);
     Script_SetVar("p.line[3]", ActivePage->TextLine[2]);
@@ -171,6 +180,9 @@ void ExecuteScript()
 /// @param bVisible 
 void setTextBoxVisibility(bool bVisible)
 {
+    if (bVisible) VDP_setSpriteLink(20, 21);
+    else VDP_setSpriteLink(20, 0);
+
     VDP_setHilightShadow(bVisible);
 }
 
@@ -193,10 +205,6 @@ void DrawNext()
     set_FG();
     set_BG();
 
-#ifndef NO_INT
-//    SYS_disableInts();
-#endif
-
     set_Palettes();
 
     // Don't shake screen again if bRedraw is true
@@ -210,10 +218,6 @@ void DrawNext()
     }
 
     setTextBoxVisibility(ActivePage->bTextbox);
-
-#ifndef NO_INT
-//    SYS_enableInts();
-#endif
 
     return;
 }
@@ -246,7 +250,9 @@ void DrawChoice()
     
     DrawNext();
 
-    VDP_setSpriteLink(20, 21);  // Enable extra portrait sprites
+    //VDP_setSpriteLink(29, 30);  //20 -> 21 // Enable extra portrait sprites
+    VDP_setSpriteAttribut(30, TILE_ATTR_FULL(PAL3, 1, 0, 0, 0x7D9));
+    VDP_setSpriteAttribut(31, TILE_ATTR_FULL(PAL3, 1, 0, 0, 0x7DD));
 
     DrawPortrait(ActivePage->Character->Portrait);
 
@@ -282,6 +288,7 @@ void PrepareNext()
     ClearTextArea();
     bInstantText = FALSE;
 
+    // Setup the NextPage to point to next page and remove the "more text available" arrow sprite
     if (ActivePage->PageType == PAGETYPE_PAGE)
     {
         VDP_setSpritePosition(0, 156, 256);
@@ -289,52 +296,45 @@ void PrepareNext()
 
         NextPage = ActivePage->NextPage[0];
     }
+    // Setup the NextPage to point to the chosen choice page and reset the character image box from the textbox
     else if (ActivePage->PageType == PAGETYPE_CHOICE)
-    {        
-        //DMA_doVRamFill(0x7D9*32, 0xC0, 0, 1);
-        VDP_setSpriteLink(20, 0);   // Disable extra portrait sprites
-        VDP_updateSprites(23, CPU);
+    {
+        VDP_setSpriteAttribut(30, TILE_ATTR_FULL(PAL3, 1, 0, 0, 0x7FC));
+        VDP_setSpriteAttribut(31, TILE_ATTR_FULL(PAL3, 1, 0, 0, 0x7FC));
 
         PAL_setColors(48, palette_black, 12, DMA_QUEUE);
 
         NextPage = ActivePage->NextPage[sIdx];
     }
+    // Setup the NextPage to point to the first next page, first next page may point to anywhere depending on scripts
     else if (ActivePage->PageType == PAGETYPE_INPUT)
     {
         NextPage = ActivePage->NextPage[0];
     }
 
-    VDP_updateSprites(23, DMA);
-
+    // Remove the textbox and text if we're doing a fade out
     if ((ActivePage->EffectBG & LFX_FADEOUT) && (ActivePage->EffectFG & LFX_FADEOUT))
     {
         setTextBoxVisibility(FALSE);
     }
 
-    //waitMs(500);
-    
-#ifndef NO_INT
-//    SYS_disableInts();
-#endif
+    // Fade out palette colours if BG/FG has the LFX_FADEOUT flag. 
+    // This also takes care of fading out the correct colour entries (for example if the BG is highcolour mode)
+    if (ActivePage->bHighColourBG) PAL_fadeOut(((ActivePage->EffectBG & LFX_FADEOUT) ? 0 : 32), ((ActivePage->EffectFG & LFX_FADEOUT) ? 47 : 31), 20, TRUE);
+    else PAL_fadeOut(((ActivePage->EffectBG & LFX_FADEOUT) ? 0  : 16), ((ActivePage->EffectFG & LFX_FADEOUT) ? 47 : 15), 20, TRUE);
 
-    //if (ActivePage->EffectBG & LFX_FADEOUT) PAL_fadeOut(0, 15, 20, FALSE);
-    //if (ActivePage->EffectFG & LFX_FADEOUT) PAL_fadeOut(16, 47, 20, FALSE);
-
-    PAL_fadeOut(((ActivePage->EffectBG & LFX_FADEOUT) ? 0  : 16), ((ActivePage->EffectFG & LFX_FADEOUT) ? 47 : 15), 20, TRUE);    
-
-    if (ActivePage->SwitchDelay)
+    // Time delay between switching to a new page (in ms)
+    if ((ActivePage->SwitchDelay) && (ActivePage->bAutoSwitch == FALSE))
     {
         waitMs(ActivePage->SwitchDelay);
     }
     
+    // Make sure we're not going into oblivion...
     if (NextPage == NULL) 
     {
         KLog("NextPage is NULL!");
-
-#ifndef NO_INT
-//        SYS_enableInts();
-#endif
-        ChangeState(GS_CRASH, 0, NULL);
+        const char *err[] = {"Next page does not exist!"};
+        ChangeState(GS_CRASH, 1, err);
         return;
     }
 
@@ -345,9 +345,7 @@ void PrepareNext()
 
     memcpy(ActivePage, NextPage, sizeof(VN_Page));
 
-#ifndef NO_INT
-//    SYS_enableInts();
-#endif
+    AutoSwitchCounter = ActivePage->SwitchDelay;
 
     return;
 }
@@ -371,12 +369,11 @@ void SetupState()
     PAL_setColor(61, 0xFFF); // Text FG
 
     //DMA_setBufferSize(0x2000);
-
     //VDP_setReg(0, 0x24);
 
     VDP_setScrollingMode(HSCROLL_LINE, VSCROLL_COLUMN);
 
-    Z80_loadDriver(Z80_DRIVER_XGM, TRUE);
+    Z80_loadDriver(Z80_DRIVER_XGM, TRUE);   // Move me to game init later (main)
     //XGM_setManualSync(TRUE);
 
     ClearTextArea();
@@ -404,15 +401,33 @@ void SetupState()
     VDP_setSpriteFull(17, 200, 200+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 18); SprBank1 += 0x4;
     VDP_setSpriteFull(18, 232, 200+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 19); SprBank1 += 0x4;
     VDP_setSpriteFull(19, 264, 200+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 20); SprBank1 += 0x4;
-    VDP_setSpriteFull(20, 296, 200+yS, SPRITE_SIZE(2, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 0);
+    VDP_setSpriteFull(20, 296, 200+yS, SPRITE_SIZE(2, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 21);   // 0
 
-    // Extra 1x6 sprites for portrait
-    VDP_setSpriteFull(21,  16, 160+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7D9), 22);//D9 DA DB DC
-    VDP_setSpriteFull(22,  48, 160+yS, SPRITE_SIZE(2, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7DD),  0);//DD DE
+    // Textbox top border TEST
+    VDP_setSpriteFull(21,   0, 160+yS, SPRITE_SIZE(2, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 22);
+    // ... gap for portrait (sprites 30/31) ...
+    VDP_setSpriteFull(22,  64, 160+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 23);
+    VDP_setSpriteFull(23,  96, 160+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 24);
+    VDP_setSpriteFull(24, 128, 160+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 25);
+    VDP_setSpriteFull(25, 160, 160+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 26);
+    VDP_setSpriteFull(26, 192, 160+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 27);
+    VDP_setSpriteFull(27, 224, 160+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 28);
+    VDP_setSpriteFull(28, 256, 160+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 29);
+    VDP_setSpriteFull(29, 288, 160+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 30); // Should point to 0 if you don't have the textbox top border on
+
+    // Textbox top border TEST (Gap may be used for portrait sprites)
+    VDP_setSpriteFull(30,  16, 160+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 31);
+    VDP_setSpriteFull(31,  48, 160+yS, SPRITE_SIZE(2, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 0);
 
     // More arrow
     VDP_setSpriteFull(0, 156, 256, SPRITE_SIZE(1, 1), TILE_ATTR_FULL(3, 1, 0, 0, 0x7DF), 1);
-    VDP_loadTileData(FONT_SCENESH.tiles+0x200, 0x7DF , 1, CPU);
+
+    VDP_loadTileData(FONT_SCENESH.tiles+0x200, 0x7DF, 1, CPU);
+
+    VDP_loadTileData(TB_BORDER.tiles, 0x7FC, 1, CPU);
+    VDP_loadTileData(TB_BORDER.tiles, 0x7FD, 1, CPU);
+    VDP_loadTileData(TB_BORDER.tiles, 0x7FE, 1, CPU);
+    VDP_loadTileData(TB_BORDER.tiles, 0x7FF, 1, CPU);
 
     if (0)//VNS_TextBoxStyle)   // Solid textbox
     {
@@ -423,7 +438,7 @@ void SetupState()
         VDP_setSpriteLink(0, 1);
     }
     
-    VDP_updateSprites(23, DMA_QUEUE);
+    VDP_updateSprites(32, DMA_QUEUE);   // 23
     SYS_doVBlankProcess();
     
     return;
@@ -564,18 +579,33 @@ void Run_Scene()
     }
     else if (ActivePage->PageType == PAGETYPE_PAGE)
     {
-        if (MoreArrowCounter >= 64)
+        if (ActivePage->bAutoSwitch)
         {
-            VDP_setSpritePosition(0, 156, 216);
-            MoreArrowCounter = 0;
+            if (AutoSwitchCounter)
+            {
+                AutoSwitchCounter--;
+            }
+            else
+            {
+                bSwitchPage = TRUE;
+            }
+        }
+        else
+        {
+            if (MoreArrowCounter >= 64)
+            {
+                VDP_setSpritePosition(0, 156, 216);
+                MoreArrowCounter = 0;
+            }
+
+            if (MoreArrowCounter == 32)
+            {
+                VDP_setSpritePosition(0, 156, 220);
+            }
+
+            MoreArrowCounter++;
         }
 
-        if (MoreArrowCounter == 32)
-        {
-            VDP_setSpritePosition(0, 156, 220);
-        }
-
-        MoreArrowCounter++;
     }
     else if (ActivePage->PageType == PAGETYPE_CHOICE)
     {
@@ -619,7 +649,7 @@ void Input_Scene(u16 joy, u16 changed, u16 state)
         }
     }
 
-    if (changed & state & BUTTON_A)
+    if ((changed & state & BUTTON_A) && (ActivePage->bAutoSwitch == FALSE))
     {
         bSwitchPage = TRUE;
     }
@@ -629,14 +659,11 @@ void Input_Scene(u16 joy, u16 changed, u16 state)
 
 void VBlank_Scene()
 {
-    VDP_updateSprites(23, DMA);
+    VDP_updateSprites(32, DMA); // 23
 
     FX_UpdateScroll();
 
     //XGM_nextFrame();
-    
-    //PAL_setColors(0, ActivePage->BG->palette->data, 16, CPU);
-    //PAL_setColors(16, ActivePage->FG->palette->data, 32, CPU);
 
     //if (bSwitchPage) RunEffectVSYNC();  // Keep animating FX during text render/Page switch
 

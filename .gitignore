@@ -1,8 +1,10 @@
 out/
 tmp/
 res/test/
+res/story/
 res/*.h
 
 .directory
 .vscode
 build.sh
+vnen.code-workspace

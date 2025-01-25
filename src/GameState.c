@@ -1,4 +1,3 @@
-
 #include "GameState.h"
 
 extern VN_GameState DummyState;

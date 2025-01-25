@@ -44,7 +44,6 @@ typedef struct s_page
     const Image *BG;    // NULL = Use last page's BG
     const Image *FG;    // NULL = Use last page's FG
 
-    const bool bTextbox;  // True: Draw a textbox behind text
     const LayerEffect EffectBG;
     const LayerEffect EffectFG;
 
@@ -53,15 +52,19 @@ typedef struct s_page
     const u16 SwitchDelay;   // 0 = skip delay, >0 = clear plan_a/plan_b and wait x frames
 
     const struct s_page *NextPage[4];
-    const char **Script;
+    const char * const *Script;
     const struct s_music *XGM_Track;
+
+    const bool bTextbox;        // True: Draw a textbox behind text
+    const bool bHighColourBG;   // True: Use dual palette for BG, otherwise use dual palette for FG
+    const bool bAutoSwitch;     // True: Switch to next page automatically when SwitchDelay reaches 0
 } VN_Page;
 
 extern u16 VNS_TextDelay;
 extern u8 VNS_TextBoxStyle;
 extern u16 VNS_TextBoxColor;
 
-bool DrawImageFG(const Image *image);
+bool DrawImageFG(const Image *image, bool bLowColour);
 bool DrawImageBG(const Image *image);
 void PrintTextLine(const char *str, u8 x, u8 y, u16 delay);
 void DrawPortrait(const Image *image);

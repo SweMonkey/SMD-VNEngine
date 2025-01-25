@@ -1,0 +1,70 @@
+Opcode list:
+setv
+addv
+subv
+mulv
+divv
+goto
+ieql
+ineq
+iend
+defv
+cats
+dbpr
+else
+
+Reserved:
+nope
+
+
+Usage:
+setv <v1>, <v2>     - set <v1> to <v2> - <v1> is created if it does not exist - <v2> must exist or be a constant value
+addv <v1>, <v2>     - add <v2> to <v1>
+subv <v1>, <v2>     - subtract <v2> from <v1>
+mulv <v1>, <v2>     - multiply <v1> with <v2>
+divv <v1>, <v2>     - divide <v1> by <v2>
+goto                - goto (does nothing)
+ieql <v1>, <v2>     - if <v1> is equal to <v2> set result bit to 1 otherwise result bit to 0     - if true; execute following code block until iend or else opcode
+ineq <v1>, <v2>     - if <v1> is not equal to <v2> set result bit to 1 otherwise result bit to 0 - if true; execute following code block until iend or else opcode
+iend                - end of if block
+defv <v1>, <v2>     - Same as setv, except it does not touch <v1> if it already exists
+cats <v1>, <v2>     - Concatenate string <v2> onto <v1>
+dbpr <v1>           - Debug print to emulator log
+else                - If previous if statement was false then execute the following code block, otherwise continue execution after the next iend opcode
+
+nope = default in case of fire opcode ($FF)
+
+
+Not implemented:
+swap <v1>, <v2>     - Swap <v1> and <v2>
+
+Will not be implemented (Listed for archival purposes):
+getc                - Get choice                        - All choices and text lines are defined in the VM as variables - Page variables are prefixed with p.<variable> and input variables are prefixed with i.<variable>
+prtc <v1>, <v2>     - Print Choice <v1> on line <v2>    - Use/Modifiy above mention variables
+prts <v1>, <v2>     - Print String <v1> on line <v2>    - Use/Modifiy above mention variables
+
+---
+
+List of Page variables:
+p.name          - Speaker's name
+p.line[1-4]     - Text for lines 1 to 4 for a regular text page, or choice strings for a choice page
+p.next[0-3]     - Warning: These are pointer variables! Setting them to random values that does not point to a valid page will cause a crash!
+
+List of Input variables:
+i.buf   - String variable which contains the last input from the onscreen keyboard
+
+---
+
+Status Register:
+XXXX XSNC XXXX XXOO
+X = Unused
+S = Skip next OP
+N = New variable was created (1)
+C = Last comparison was true (1)
+O = Last op code run
+
+---
+
+Todo:
+nested ifs (multiple iends)
+

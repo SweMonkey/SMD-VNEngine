@@ -1,8 +1,7 @@
-
 #include "GameState.h"
 #include "SceneUtil.h"
 #include "ScriptEngine.h"
-#include "../res/system.h"
+#include "../res/System_res.h"
 
 // Characters inside button box
 static const u16 CharMap[2][40] =
@@ -57,12 +56,13 @@ char InputBuffer[32] = {'\0'};  // User typed string. To be accessed remotely in
 // External background
 extern const Image IMG_TextInput;
 
+
 void DrawInputText(const char *text, u8 yStart)
 {
     u8 i = 0;
     while((text[i] != '\0') && (i+yStart < 30))
     {
-        VDP_loadTileData(FONT_SCENESH.tiles+((text[i]-32)<<3), ((SPR_START-0x98)+4)+((i+yStart)*3), 1, DMA);
+        VDP_loadTileData(FONT_SCENESH.tiles+((text[i]-32)<<3), ((SPR_START-0x98)+4)+((i+yStart)*3), 1, CPU);    // ...
         i++;
     }
 }
@@ -183,6 +183,7 @@ void ReEnter_TextInput()
 
 void Exit_TextInput(GameState new_state)
 {
+    PAL_fadeOutAll(3, FALSE);
     VDP_clearPlane(BG_B, TRUE);
     VDP_clearPlane(BG_A, TRUE);
     VDP_setSpriteLink(0, 0);

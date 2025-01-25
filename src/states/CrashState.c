@@ -1,6 +1,6 @@
-
 #include "GameState.h"
-#include "../res/system.h"
+#include "../res/System_res.h"
+
 
 void Enter_Crash(u8 argc, const char *argv[])
 {    
@@ -21,6 +21,12 @@ void Enter_Crash(u8 argc, const char *argv[])
     KLog("Entering crash state");
 
     VDP_drawText("ENGINE CRASHED!", 5, 5);
+
+    if (argc > 0)
+    {        
+        VDP_drawText("Crash reason:", 5, 7);
+        VDP_drawText(argv[0], 5, 8);
+    }
 }
 
 void ReEnter_Crash()

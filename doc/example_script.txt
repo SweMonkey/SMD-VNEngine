@@ -1,0 +1,24 @@
+; Say "hello" and the name which was input before the script was run and
+; increment "times viewed" count each time script runs and change "time" to "times" if "times viewed" is not 1
+
+defv view, 1
+setv str1, "You have seen this screen "
+
+ieql view, 1
+setv str2, " time"
+else
+setv str2, " times"
+iend
+
+cats str1, view
+cats str1, str2
+
+setv p.name, "Someone"
+setv p.line[1], "Hello "
+cats p.line[1], i.buf
+cats p.line[1], "!"
+setv p.line[2], "Line2"
+setv p.line[3], "Line3"
+setv p.line[4], str1
+
+addv view, 1

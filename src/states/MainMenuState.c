@@ -1,9 +1,9 @@
-
 #include "GameState.h"
-#include "../res/system.h"
+#include "../res/System_res.h"
 
 // External main menu background
 extern const Image IMG_Title;
+
 
 /// @brief Begin a new game
 void Menu_StartGame()
@@ -71,6 +71,7 @@ static struct s_menu
 static u8 SelectedIdx = 0;
 static u8 MenuIdx = 0;
 static const u8 MenuPosX = 16, MenuPosY = 22;
+
 
 void DrawMenu(u8 idx)
 {

@@ -1,7 +1,6 @@
-
 #include "GameState.h"
 #include "SceneUtil.h"
-#include "../res/system.h"
+#include "../res/System_res.h"
 
 const u32 CPE_Tile[8] = {0x02222222, 0x2EEEEEEE, 0x2EEEEEEE, 0x2EEEEEEE, 0x2EEEEEEE, 0x2EEEEEEE, 0x2EEEEEEE, 0x2EEEEEEE};   // Color Pick edge tile
 const u32 CP_Tile[8]  = {0xEEEEEEEE, 0xEEEEEEEE, 0xEEEEEEEE, 0xEEEEEEEE, 0xEEEEEEEE, 0xEEEEEEEE, 0xEEEEEEEE, 0xEEEEEEEE};   // Color Pick tile
@@ -268,7 +267,7 @@ void Input_Options(u16 joy, u16 changed, u16 state)
         else if ((sIdx == 10) && !VNS_TextBoxStyle) sIdx = 3; // Jump to Textbox style selector if using transparent textbox
         else if (sIdx == 6) sIdx = 3;   // Jump to Textbox style selector
         else if (sIdx == 3) sIdx = 0;   // Jump to Textspeed selector
-        else if (sIdx == 0) sIdx = 11;   // Jump to bottom choice
+        else if (sIdx == 0) sIdx = 11;  // Jump to bottom choice
         else sIdx--;
     }
 
@@ -277,10 +276,10 @@ void Input_Options(u16 joy, u16 changed, u16 state)
         VDP_drawText(" ", 2, sIdx+6);
 
         if (sIdx == 8) sIdx = 10;       // Jump to Return
-        else if ((sIdx == 3) && VNS_TextBoxStyle) sIdx = 6;   // Jump to Color picker (red) if using solid textbox
+        else if ((sIdx == 3) && VNS_TextBoxStyle) sIdx = 6;     // Jump to Color picker (red) if using solid textbox
         else if ((sIdx == 3) && !VNS_TextBoxStyle) sIdx = 10;   // Jump to Return if using transparent textbox
         else if (sIdx == 0) sIdx = 3;   // Jump to Textbox style
-        else if (sIdx == 11) sIdx = 0;   // Jump to top choice
+        else if (sIdx == 11) sIdx = 0;  // Jump to top choice
         else sIdx++;
     }
 
@@ -310,7 +309,6 @@ void Input_Options(u16 joy, u16 changed, u16 state)
 
 void VBlank_Options()
 {
-    return;
 }
 
 const VN_GameState OptionsState = 
