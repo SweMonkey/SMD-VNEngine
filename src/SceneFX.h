@@ -4,6 +4,8 @@
 #include <genesis.h>
 #include "SceneUtil.h"
 
+#define LINETABLE_SIZE 224
+
 void FX_RunEffect();
 void FX_UpdateScroll();
 void FX_SetEffects(PageLayer Layer, LayerEffect Effect);

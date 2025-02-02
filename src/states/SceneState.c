@@ -1,6 +1,7 @@
 #include "GameState.h"
 #include "ScriptEngine.h"
 #include "SceneFX.h"
+#include "SceneUtil.h"
 #include "../res/System_res.h"
 
 #define BUF_MAX_STRLEN 40
@@ -13,6 +14,7 @@ static const Image *LastBG = NULL;
 static const Image *LastFG = NULL;
 static bool bRedrawBG = FALSE;
 static bool bRedrawFG = FALSE;
+static bool bFxEnable = TRUE;
 static bool bInstantText = FALSE;
 
 static const VN_Track *LastTrack = NULL;
@@ -36,6 +38,9 @@ static u16 AutoSwitchCounter = 0;
 // Choice variables
 static u8 sIdx = 0; // Choice selection index
 static u8 cCnt = 0; // Choice count
+
+// Forward decl.
+VN_GameState SceneState;
 
 
 /// @brief Set the new palette depending on page FX (Fade In/Out or Set)
@@ -98,7 +103,12 @@ void set_BG()
         }
     }
 
-    if (DrawImageBG(ActivePage->BG) == FALSE) KLog("DrawImageBG returned false!");
+    if (DrawImageBG(ActivePage->BG) == FALSE) 
+    {
+        #ifdef DEBUG_STATE_MSG
+        KLog("DrawImageBG returned false!");
+        #endif
+    }
 
     SkipDrawBG:
 
@@ -121,7 +131,12 @@ void set_FG()
         }
     }
 
-    if (DrawImageFG(ActivePage->FG, ActivePage->bHighColourBG) == FALSE) KLog("DrawImageFG returned false!");
+    if (DrawImageFG(ActivePage->FG, ActivePage->bHighColourBG) == FALSE) 
+    {
+        #ifdef DEBUG_STATE_MSG
+        KLog("DrawImageFG returned false!");
+        #endif
+    }
 
     SkipDrawFG:
 
@@ -180,10 +195,10 @@ void ExecuteScript()
 /// @param bVisible 
 void setTextBoxVisibility(bool bVisible)
 {
+    Set_SHBoxEnable(ActivePage, bVisible);
+
     if (bVisible) VDP_setSpriteLink(20, 21);
     else VDP_setSpriteLink(20, 0);
-
-    VDP_setHilightShadow(bVisible);
 }
 
 /// @brief Call BG/FG/Palette drawing functions and set the new effects for the current page
@@ -193,8 +208,6 @@ void DrawNext()
     {
         if (LastTrack != ActivePage->XGM_Track)
         {
-            //if (XGM_isPlaying) XGM_stopPlay();
-
             XGM_setLoopNumber(ActivePage->XGM_Track->Repeat);
             XGM_startPlay(ActivePage->XGM_Track->TrackPtr);
 
@@ -205,11 +218,11 @@ void DrawNext()
     set_FG();
     set_BG();
 
-    set_Palettes();
+    if (bFxEnable) set_Palettes();
 
     // Don't shake screen again if bRedraw is true
-    FX_SetEffects(PL_BG, (ActivePage->EffectBG & (bRedrawBG?(~LFX_SHAKELR):0xFFFFFFF) ));
-    FX_SetEffects(PL_FG, (ActivePage->EffectFG & (bRedrawFG?(~LFX_SHAKELR):0xFFFFFFF) ));
+    FX_SetEffects(PL_BG, (ActivePage->EffectBG & ((bRedrawBG || !bFxEnable)?(~LFX_SHAKELR):0xFFFFFFF) ));
+    FX_SetEffects(PL_FG, (ActivePage->EffectFG & ((bRedrawFG || !bFxEnable)?(~LFX_SHAKELR):0xFFFFFFF) ));
 
     if (bRedrawBG || bRedrawFG)
     {
@@ -232,7 +245,9 @@ void DrawPage()
 
     DrawNext();
 
-    PrintTextLine(BUF_Name, 1, 0, 0);
+    PAL_setColor(59, ActivePage->Character->Color);
+
+    PrintTextSpeaker(BUF_Name);
 
     PrintTextLine(BUF_TextLine[0], 1, 1, tmp_textdelay);
     PrintTextLine(BUF_TextLine[1], 1, 2, tmp_textdelay);
@@ -250,7 +265,7 @@ void DrawChoice()
     
     DrawNext();
 
-    //VDP_setSpriteLink(29, 30);  //20 -> 21 // Enable extra portrait sprites
+    // Change sprite 30/31 to point to portrait tiles
     VDP_setSpriteAttribut(30, TILE_ATTR_FULL(PAL3, 1, 0, 0, 0x7D9));
     VDP_setSpriteAttribut(31, TILE_ATTR_FULL(PAL3, 1, 0, 0, 0x7DD));
 
@@ -332,7 +347,10 @@ void PrepareNext()
     // Make sure we're not going into oblivion...
     if (NextPage == NULL) 
     {
+        #ifdef DEBUG_STATE_MSG
         KLog("NextPage is NULL!");
+        #endif
+
         const char *err[] = {"Next page does not exist!"};
         ChangeState(GS_CRASH, 1, err);
         return;
@@ -350,43 +368,27 @@ void PrepareNext()
     return;
 }
 
-/// @brief Initialize and setup everything needed for the scene state
-void SetupState()
+/// @brief Setup sprites needed for the scene state
+static void SetupSprites()
 {
     u16 SprBank0 = SPR_BANK0;   // $D000 - $DFFF
     u16 SprBank1 = SPR_BANK1;   // $F000 - $F7FF
-    const u8 PL = PAL3; // Sprite textbox palette
-    const u8 PR = 1;    // Sprite textbox priority
-    const u8 yS = 8;    // Sprite textbox yShift
+    const u8 PL = PAL3;         // Sprite textbox palette
+    const u8 PR = 1;            // Sprite textbox priority
+    const u8 yS = 8;            // Sprite textbox yShift
 
-    MEM_pack();
-
-    PAL_setPalette(PAL0, palette_black, CPU);
-    PAL_setPalette(PAL1, palette_black, CPU);
-    PAL_setPalette(PAL2, palette_black, CPU);
-    PAL_setPalette(PAL3, palette_black, CPU);
-    PAL_setColor(60, 0x000); // Text Outline
-    PAL_setColor(61, 0xFFF); // Text FG
-
-    //DMA_setBufferSize(0x2000);
-    //VDP_setReg(0, 0x24);
-
-    VDP_setScrollingMode(HSCROLL_LINE, VSCROLL_COLUMN);
-
-    Z80_loadDriver(Z80_DRIVER_XGM, TRUE);   // Move me to game init later (main)
-    //XGM_setManualSync(TRUE);
-
-    ClearTextArea();
-
+    // More arrow
+    VDP_setSpriteFull(0, 156, 256, SPRITE_SIZE(1, 1), TILE_ATTR_FULL(3, 1, 0, 0, 0x7DF), 1);
+    
     // Top 10 sprites
-    VDP_setSpriteFull( 1,   8, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0), 2); SprBank0 += 0x10;
-    VDP_setSpriteFull( 2,  40, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0), 3); SprBank0 += 0x10;
-    VDP_setSpriteFull( 3,  72, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0), 4); SprBank0 += 0x10;
-    VDP_setSpriteFull( 4, 104, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0), 5); SprBank0 += 0x10;
-    VDP_setSpriteFull( 5, 136, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0), 6); SprBank0 += 0x10;
-    VDP_setSpriteFull( 6, 168, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0), 7); SprBank0 += 0x10;
-    VDP_setSpriteFull( 7, 200, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0), 8); SprBank0 += 0x10;
-    VDP_setSpriteFull( 8, 232, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0), 9);
+    VDP_setSpriteFull( 1,   8, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0),  2); SprBank0 += 0x10;
+    VDP_setSpriteFull( 2,  40, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0),  3); SprBank0 += 0x10;
+    VDP_setSpriteFull( 3,  72, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0),  4); SprBank0 += 0x10;
+    VDP_setSpriteFull( 4, 104, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0),  5); SprBank0 += 0x10;
+    VDP_setSpriteFull( 5, 136, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0),  6); SprBank0 += 0x10;
+    VDP_setSpriteFull( 6, 168, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0),  7); SprBank0 += 0x10;
+    VDP_setSpriteFull( 7, 200, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0),  8); SprBank0 += 0x10;
+    VDP_setSpriteFull( 8, 232, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank0),  9);
 
     VDP_setSpriteFull( 9, 264, 168+yS, SPRITE_SIZE(4, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 10); SprBank1 += 0x10;
     VDP_setSpriteFull(10, 296, 168+yS, SPRITE_SIZE(2, 4), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 11); SprBank1 += 0x8;
@@ -394,16 +396,16 @@ void SetupState()
     // Bottom 10 sprites
     VDP_setSpriteFull(11,   8, 200+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 12); SprBank1 += 0x4;
     VDP_setSpriteFull(12,  40, 200+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 13); SprBank1 += 0x4;
-    VDP_setSpriteFull(13,  72, 200+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 14); SprBank1 += 0x4;    
+    VDP_setSpriteFull(13,  72, 200+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 14); SprBank1 += 0x4;
     VDP_setSpriteFull(14, 104, 200+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 15); SprBank1 += 0x4;
     VDP_setSpriteFull(15, 136, 200+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 16); SprBank1 += 0x4;
     VDP_setSpriteFull(16, 168, 200+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 17); SprBank1 += 0x4;
     VDP_setSpriteFull(17, 200, 200+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 18); SprBank1 += 0x4;
     VDP_setSpriteFull(18, 232, 200+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 19); SprBank1 += 0x4;
     VDP_setSpriteFull(19, 264, 200+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 20); SprBank1 += 0x4;
-    VDP_setSpriteFull(20, 296, 200+yS, SPRITE_SIZE(2, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1), 21);   // 0
+    VDP_setSpriteFull(20, 296, 200+yS, SPRITE_SIZE(2, 1), TILE_ATTR_FULL(PL, PR, 0, 0, SprBank1),  0);
 
-    // Textbox top border TEST
+    // Textbox top border line
     VDP_setSpriteFull(21,   0, 160+yS, SPRITE_SIZE(2, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 22);
     // ... gap for portrait (sprites 30/31) ...
     VDP_setSpriteFull(22,  64, 160+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 23);
@@ -415,15 +417,30 @@ void SetupState()
     VDP_setSpriteFull(28, 256, 160+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 29);
     VDP_setSpriteFull(29, 288, 160+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 30); // Should point to 0 if you don't have the textbox top border on
 
-    // Textbox top border TEST (Gap may be used for portrait sprites)
+    // Textbox top border line (Gap may be used for portrait sprites)
     VDP_setSpriteFull(30,  16, 160+yS, SPRITE_SIZE(4, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 31);
     VDP_setSpriteFull(31,  48, 160+yS, SPRITE_SIZE(2, 1), TILE_ATTR_FULL(PL, PR, 0, 0, 0x7FC), 0);
 
-    // More arrow
-    VDP_setSpriteFull(0, 156, 256, SPRITE_SIZE(1, 1), TILE_ATTR_FULL(3, 1, 0, 0, 0x7DF), 1);
+    VDP_updateSprites(20, DMA);   // 23
+}
 
-    VDP_loadTileData(FONT_SCENESH.tiles+0x200, 0x7DF, 1, CPU);
+/// @brief Initialize and setup everything needed for the scene state
+static void SetupState()
+{
+    VDP_setEnable(FALSE);
+    MEM_pack();
 
+    PAL_setColors(0, palette_black, 64, DMA);
+    PAL_setColor(60, 0x000); // Text Outline
+    PAL_setColor(61, 0xFFF); // Text FG
+
+    ClearTextArea();
+    SetupSprites();
+
+    // "More text" down arrow
+    VDP_loadTileData(FONT_NORMAL.tiles+0x200, 0x7DF, 1, CPU);
+
+    // Tiles for top border line of textbox
     VDP_loadTileData(TB_BORDER.tiles, 0x7FC, 1, CPU);
     VDP_loadTileData(TB_BORDER.tiles, 0x7FD, 1, CPU);
     VDP_loadTileData(TB_BORDER.tiles, 0x7FE, 1, CPU);
@@ -434,19 +451,24 @@ void SetupState()
     }
     else    // Transparent
     {
-        VDP_setHilightShadow(1);
+        VDP_setHilightShadow(TRUE);
         VDP_setSpriteLink(0, 1);
     }
-    
-    VDP_updateSprites(32, DMA_QUEUE);   // 23
+
+    FX_UpdateScroll();
+
     SYS_doVBlankProcess();
+    
+    VDP_setEnable(TRUE);
     
     return;
 }
 
 void Enter_Scene(u8 argc, const char *argv[])
 {
+    #ifdef DEBUG_STATE_MSG
     KLog("Entering scene");
+    #endif
 
     Script_DeleteVariables();
 
@@ -455,6 +477,9 @@ void Enter_Scene(u8 argc, const char *argv[])
     bRedrawBG = FALSE;
     bRedrawFG = FALSE;
     bInstantText = FALSE;
+
+    XGM_setLoopNumber(-1);
+    XGM_startPlay(MUS_DUMMY);
 
     SetupState();
 
@@ -488,11 +513,13 @@ void Enter_Scene(u8 argc, const char *argv[])
 
 void ReEnter_Scene()
 {
+    #ifdef DEBUG_STATE_MSG
     KLog("RE Entering scene");
+    #endif
 
     SetupState();
 
-    if (XGM_isPlaying()) XGM_resumePlay();
+    XGM_resumePlay();
 
     bRedrawBG = TRUE;
     bRedrawFG = TRUE;
@@ -523,23 +550,77 @@ void ReEnter_Scene()
     return;
 }
 
+void ReEnter_Scene_FromMenu()
+{
+    #ifdef DEBUG_STATE_MSG
+    KLog("RE Entering scene from in game menu");
+    #endif
+
+    SceneState.ReEnter = ReEnter_Scene;
+
+    ClearTextArea();
+    SetupSprites();
+    Set_SHBoxEnable(ActivePage, TRUE);
+    XGM_resumePlay();
+
+    bFxEnable = FALSE;
+
+    switch (ActivePage->PageType)
+    {
+    case PAGETYPE_NULL:
+    break;
+
+    case PAGETYPE_PAGE:
+        bInstantText = TRUE;
+        DrawPage();
+    break;
+
+    case PAGETYPE_CHOICE:
+        bInstantText = TRUE;
+        DrawChoice();
+    break;
+
+    case PAGETYPE_INPUT:
+        bSwitchPage = TRUE;
+    break;
+
+    default:
+    break;
+    }
+
+    bFxEnable = TRUE;
+
+    return;
+}
+
 void Exit_Scene(GameState new_state)
 {
+    #ifdef DEBUG_STATE_MSG
     KLog("Exiting scene");
+    #endif
 
     VDP_setSpritePosition(0, 156, 384); // Remove textbox sprite
     VDP_setSpriteLink(0, 0);            // Remove S/H related sprites
     VDP_updateSprites(1, TRUE);
 
-    VDP_clearPlane(BG_B, TRUE);
-    VDP_clearPlane(BG_A, TRUE);
+    Set_SHBoxEnable(ActivePage, FALSE);
 
-    FX_ResetEffect();
-
-    if ((new_state != GS_TEXTINPUT) && (new_state != GS_Options))
+    if (new_state != GS_INGAME_MENU) 
     {
-        XGM_pausePlay();
+        #ifdef DEBUG_STATE_MSG
+        KLog("Resetting FX");
+        #endif
+
+        FX_ResetEffect();
+    }
+
+    if (new_state == GS_INGAME_MENU)
+    {
+        #ifdef DEBUG_STATE_MSG
         KLog("Pausing music");
+        #endif
+
+        XGM_pausePlay();
     }
 
     SYS_doVBlankProcess();
@@ -612,8 +693,6 @@ void Run_Scene()
     }
 
     if (bSwitchPage == FALSE) FX_RunEffect();
-    
-    //XGM_nextXFrame(1);
 
     return;
 }
@@ -624,7 +703,8 @@ void Input_Scene(u16 joy, u16 changed, u16 state)
 
     if (changed & state & BUTTON_START)
     {
-        ChangeState(GS_Options, 0, NULL);
+        SceneState.ReEnter = ReEnter_Scene_FromMenu;
+        ChangeState(GS_INGAME_MENU, 0, NULL);
     }
 
     if (ActivePage->PageType == PAGETYPE_CHOICE)
@@ -659,18 +739,14 @@ void Input_Scene(u16 joy, u16 changed, u16 state)
 
 void VBlank_Scene()
 {
-    VDP_updateSprites(32, DMA); // 23
+    VDP_updateSprites(32, DMA);
 
     FX_UpdateScroll();
-
-    //XGM_nextFrame();
-
-    //if (bSwitchPage) RunEffectVSYNC();  // Keep animating FX during text render/Page switch
 
     return;
 }
 
-const VN_GameState SceneState = 
+VN_GameState SceneState = 
 {
     Enter_Scene, ReEnter_Scene, Exit_Scene, Run_Scene, Input_Scene, NULL, VBlank_Scene
 };

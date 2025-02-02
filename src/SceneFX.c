@@ -1,7 +1,5 @@
 #include "SceneFX.h"
 
-#define LINETABLE_SIZE 224
-
 // LineGlitch variables
 static u8 DelayTimer[2] = {0, 0};
 
@@ -73,7 +71,7 @@ void FX_LineGlitch(PageLayer Layer)
 /// @param Layer Layer to run the effect on (PL_BG, PL_FG)
 void FX_SlideIn(PageLayer Layer)
 {
-    if (SlideXPos[Layer])
+    if (SlideXPos[Layer] >= 0)
     {
         memsetU16((u16*)LineTable[Layer], SlideXPos[Layer], LINETABLE_SIZE);
 
@@ -183,6 +181,7 @@ void FX_ResetEffect()
         }
 
         //SineScroll[l] = random() % 256;
+        ShakeCount[l] = 80;
         ActiveEffect[l] = 0;
     }
 }
@@ -205,6 +204,7 @@ void FX_SemiResetEffect(PageLayer Layer, LayerEffect NewEffects)
             bEffectRunning[Layer] = FALSE;
         }
 
+        ShakeCount[Layer] = 80;
         ActiveEffect[Layer] = 0;
     }
     else ActiveEffect[Layer] = NewEffects;

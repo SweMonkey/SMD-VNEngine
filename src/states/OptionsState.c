@@ -22,12 +22,21 @@ static u8 tbRed = 0;
 static u8 tbGreen = 0;
 static u8 tbBlue = 0;
 
+// Forward decl.
+void Update_Selection();
+
 
 void Enter_Options(u8 argc, const char *argv[])
 {
+    #ifdef DEBUG_STATE_MSG
     KLog("Entering options");
+    #endif
 
-    VDP_setHilightShadow(0);
+    VDP_setEnable(FALSE);
+
+    VDP_setHilightShadow(FALSE);
+    VDP_clearPlane(BG_A, TRUE);
+    VDP_clearPlane(BG_B, TRUE);
 
     sIdx = 0;
 
@@ -48,7 +57,7 @@ void Enter_Options(u8 argc, const char *argv[])
     PAL_setColor(61, 0xEEE); // Text FG
 
     // Draw background
-    VDP_drawImageEx(BG_B, &IMG_Options, TILE_ATTR_FULL(PAL2, 0, 0, 0, 1), 0, 0, TRUE, DMA_QUEUE);
+    VDP_drawImageEx(BG_B, &IMG_Options, TILE_ATTR_FULL(PAL2, 0, 0, 0, 1), 0, 0, FALSE, DMA_QUEUE);
 
     VDP_loadTileData(CPE_Tile, 0x6ED, 1, DMA_QUEUE);
     VDP_loadTileData(CP_Tile, 0x6EE, 1, DMA_QUEUE);
@@ -60,7 +69,7 @@ void Enter_Options(u8 argc, const char *argv[])
     sprintf(str, "%d %c  ", (100-VNS_TextDelay), '%');
     VDP_drawText(str, 28, 6);
 
-    c = 11; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((11-c) > (tdDiv) ? 0x5BE : 0)), 15+c, 6);
+    c = 11; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((11-c) > (tdDiv) ? 0x5FF : 0)), 15+c, 6);
 
 
     VDP_drawText("Textbox style", 3, 8);
@@ -101,36 +110,119 @@ void Enter_Options(u8 argc, const char *argv[])
     VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 1, 1, 0x6ED), 28, 14);
 
     // Update color picker blocks
-    c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbRed) ? 0x5BE : 0)), 13+c, 12);
-    c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbGreen) ? 0x5BE : 0)), 13+c, 13);
-    c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbBlue) ? 0x5BE : 0)), 13+c, 14);
+    c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbRed) ? 0x5FF : 0)), 13+c, 12);
+    c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbGreen) ? 0x5FF : 0)), 13+c, 13);
+    c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbBlue) ? 0x5FF : 0)), 13+c, 14);
 
-    VDP_drawText("Exit to main menu", 3, 16);
-    VDP_drawText("Return", 3, 17);
+    VDP_drawText("Return", 3, 16);
+
+    Update_Selection();
+
+    SYS_doVBlankProcess();
+
+    VDP_setEnable(TRUE);
+
+    PAL_fadeIn(32, 47, IMG_Options.palette->data, 20, FALSE);
     
     return;
 }
 
 void ReEnter_Options()
 {
+    #ifdef DEBUG_STATE_MSG
     KLog("RE Entering options");
+    #endif
 
     return;
 }
 
 void Exit_Options(GameState new_state)
 {
+    #ifdef DEBUG_STATE_MSG
     KLog("Exiting options");
+    #endif
+
+    PAL_fadeOut(0, 63, 20, FALSE);
+
+    VDP_setEnable(FALSE);
+
     VDP_clearPlane(BG_B, TRUE);
     VDP_clearPlane(BG_A, TRUE);
+
+    VDP_setEnable(TRUE);
     
     return;
 }
 
 void Run_Options()
 {
-    if (isCurrentState(GS_Options) == FALSE) return;
+    return;
+}
 
+void Input_Options(u16 joy, u16 changed, u16 state)
+{
+    if (changed & state & BUTTON_UP)
+    {
+        VDP_drawText(" ", 2, sIdx+6);
+
+        if ((sIdx == 10) && VNS_TextBoxStyle) sIdx = 8;       // Jump to Color picker (blue) if using solid textbox
+        else if ((sIdx == 10) && !VNS_TextBoxStyle) sIdx = 3; // Jump to Textbox style selector if using transparent textbox
+        else if (sIdx == 6) sIdx = 3;   // Jump to Textbox style selector
+        else if (sIdx == 3) sIdx = 0;   // Jump to Textspeed selector
+        else if (sIdx == 0) sIdx = 10;  // Jump to bottom choice
+        else sIdx--;
+
+        Update_Selection();
+    }
+
+    if (changed & state & BUTTON_DOWN)
+    {
+        VDP_drawText(" ", 2, sIdx+6);
+
+        if (sIdx == 8) sIdx = 10;       // Jump to Return
+        else if ((sIdx == 3) && VNS_TextBoxStyle) sIdx = 6;     // Jump to Color picker (red) if using solid textbox
+        else if ((sIdx == 3) && !VNS_TextBoxStyle) sIdx = 10;   // Jump to Return if using transparent textbox
+        else if (sIdx == 0) sIdx = 3;   // Jump to Textbox style
+        else if (sIdx == 10) sIdx = 0;  // Jump to top choice
+        else sIdx++;
+
+        Update_Selection();
+    }
+
+    if (changed & state & BUTTON_LEFT)
+    {
+        sLR = -1;
+
+        Update_Selection();
+    }
+    else if (changed & state & BUTTON_RIGHT)
+    {
+        sLR = 1;
+
+        Update_Selection();
+    }
+    else sLR = 0;
+
+    if (changed & state & BUTTON_A)
+    {
+        if (sIdx == 10) 
+        {
+            if (GetPreviousState() == GS_INGAME_MENU) ReEnterState(GS_Scene);
+            else RevertState();
+            
+        }
+    }
+
+    return;
+}
+
+void VBlank_Options()
+{
+}
+
+
+void Update_Selection()
+{
     switch (sIdx)
     {
         case 0: // Text speed
@@ -139,7 +231,7 @@ void Run_Options()
 
             c = 11;
             tdDiv = ((VNS_TextDelay) >> 3);
-            while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((11-c) > (tdDiv) ? 0x5BE : 0)), 15+c, 6);//15+c, 6);
+            while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((11-c) > (tdDiv) ? 0x5FF : 0)), 15+c, 6);//15+c, 6);
 
             sprintf(str, "%d %c  ", (100-VNS_TextDelay), '%');
             VDP_drawText(str, 28, 6);
@@ -162,9 +254,9 @@ void Run_Options()
                 tbGreen = 6;
                 tbBlue = 6;
 
-                c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, (((7-c) > (tbRed) ? 0x5BE : 0))), 13+c, 12);
-                c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, (((7-c) > (tbGreen) ? 0x5BE : 0))), 13+c, 13);
-                c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, (((7-c) > (tbBlue) ? 0x5BE : 0))), 13+c, 14);
+                c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, (((7-c) > (tbRed) ? 0x5FF : 0))), 13+c, 12);
+                c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, (((7-c) > (tbGreen) ? 0x5FF : 0))), 13+c, 13);
+                c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, (((7-c) > (tbBlue) ? 0x5FF : 0))), 13+c, 14);
 
                 VDP_drawText("1  ", 22, 12);
                 VDP_drawText("1  ", 22, 13);
@@ -180,9 +272,9 @@ void Run_Options()
                 tbGreen = tbGreen_OLD;
                 tbBlue = tbBlue_OLD;
 
-                c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbRed) ? 0x5BE : 0)), 13+c, 12);
-                c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbGreen) ? 0x5BE : 0)), 13+c, 13);
-                c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbBlue) ? 0x5BE : 0)), 13+c, 14);
+                c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbRed) ? 0x5FF : 0)), 13+c, 12);
+                c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbGreen) ? 0x5FF : 0)), 13+c, 13);
+                c = 7; while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbBlue) ? 0x5FF : 0)), 13+c, 14);
 
                 sprintf(str, "%u  ", 7-tbRed);
                 VDP_drawText(str, 22, 12);
@@ -199,7 +291,7 @@ void Run_Options()
             else if ((sLR==-1) && (tbRed <= 6)) tbRed += 1;
 
             c = 7;
-            while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbRed) ? 0x5BE : 0)), 13+c, 12);
+            while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbRed) ? 0x5FF : 0)), 13+c, 12);
 
             sprintf(str, "%u  ", 7-tbRed);
             VDP_drawText(str, 22, 12);
@@ -213,7 +305,7 @@ void Run_Options()
             else if ((sLR==-1) && (tbGreen <= 6)) tbGreen += 1;
 
             c = 7;
-            while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbGreen) ? 0x5BE : 0)), 13+c, 13);
+            while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbGreen) ? 0x5FF : 0)), 13+c, 13);
 
             sprintf(str, "%u  ", 7-tbGreen);
             VDP_drawText(str, 22, 13);
@@ -227,7 +319,7 @@ void Run_Options()
             else if ((sLR==-1) && (tbBlue <= 6)) tbBlue += 1;
 
             c = 7;
-            while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbBlue) ? 0x5BE : 0)), 13+c, 14);
+            while (c--) VDP_setTileMapXY(BG_A, TILE_ATTR_FULL(PAL3, 0, 0, 0, ((7-c) > (tbBlue) ? 0x5FF : 0)), 13+c, 14);
 
             sprintf(str, "%u  ", 7-tbBlue);
             VDP_drawText(str, 22, 14);
@@ -235,10 +327,7 @@ void Run_Options()
             waitMs(33);
         break;
 
-        case 10: // Exit to main menu
-        break;
-
-        case 11: // Return
+        case 10: // Return
         break;
 
         default:
@@ -253,63 +342,8 @@ void Run_Options()
     VNS_TextBoxColor |= (((7-tbRed) << 1)+1);
 
     PAL_setColor(62, VNS_TextBoxColor);
-
-    return;
 }
 
-void Input_Options(u16 joy, u16 changed, u16 state)
-{
-    if (changed & state & BUTTON_UP)
-    {
-        VDP_drawText(" ", 2, sIdx+6);
-
-        if ((sIdx == 10) && VNS_TextBoxStyle) sIdx = 8;       // Jump to Color picker (blue) if using solid textbox
-        else if ((sIdx == 10) && !VNS_TextBoxStyle) sIdx = 3; // Jump to Textbox style selector if using transparent textbox
-        else if (sIdx == 6) sIdx = 3;   // Jump to Textbox style selector
-        else if (sIdx == 3) sIdx = 0;   // Jump to Textspeed selector
-        else if (sIdx == 0) sIdx = 11;  // Jump to bottom choice
-        else sIdx--;
-    }
-
-    if (changed & state & BUTTON_DOWN)
-    {
-        VDP_drawText(" ", 2, sIdx+6);
-
-        if (sIdx == 8) sIdx = 10;       // Jump to Return
-        else if ((sIdx == 3) && VNS_TextBoxStyle) sIdx = 6;     // Jump to Color picker (red) if using solid textbox
-        else if ((sIdx == 3) && !VNS_TextBoxStyle) sIdx = 10;   // Jump to Return if using transparent textbox
-        else if (sIdx == 0) sIdx = 3;   // Jump to Textbox style
-        else if (sIdx == 11) sIdx = 0;  // Jump to top choice
-        else sIdx++;
-    }
-
-    if (changed & state & BUTTON_LEFT)
-    {
-        sLR = -1;
-    }
-    else if (changed & state & BUTTON_RIGHT)
-    {
-        sLR = 1;
-    }
-    else sLR = 0;
-
-    if (changed & state & BUTTON_A)
-    {
-        if (sIdx == 10) 
-        {
-            PAL_fadeOutAll(20, FALSE);
-            ChangeState(GS_MainMenu, 0, NULL);
-        }
-
-        if (sIdx == 11) RevertState();
-    }
-
-    return;
-}
-
-void VBlank_Options()
-{
-}
 
 const VN_GameState OptionsState = 
 {

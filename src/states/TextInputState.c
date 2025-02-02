@@ -72,11 +72,11 @@ void Enter_TextInput(u8 argc, const char *argv[])
     const u8 PL = PAL3; // Sprite textbox palette
     const u8 PR = 1;    // Sprite textbox priority
 
-    PAL_setPalette(PAL0, palette_black, CPU);
-    PAL_setPalette(PAL1, palette_black, CPU);
-    PAL_setPalette(PAL2, palette_black, CPU);
-    PAL_setPalette(PAL3, palette_black, CPU);
-    
+    VDP_setEnable(FALSE);
+
+    VDP_clearPlane(BG_B, TRUE);
+    VDP_clearPlane(BG_A, TRUE);
+
     // Reset variables
     SprBank0 = SPR_START;
     SprBank1 = SPR_START-0x98;
@@ -175,6 +175,8 @@ void Enter_TextInput(u8 argc, const char *argv[])
     {
         MaxStrLen = (u8)atoi(argv[1]);
     }
+
+    VDP_setEnable(TRUE);
 }
 
 void ReEnter_TextInput()
@@ -217,7 +219,7 @@ void Run_TextInput()
 
 void Input_TextInput(u16 joy, u16 changed, u16 state)
 {
-    VDP_setSpritePalette((ySel*10)+xSel, PAL3);
+    VDP_setSpritePalette((ySel*10)+xSel, PAL3); // Reset previous selected button palette
 
     if (changed & state & BUTTON_UP)
     {
@@ -276,7 +278,7 @@ void Input_TextInput(u16 joy, u16 changed, u16 state)
         bSwitchCase = TRUE;
     }
 
-    VDP_setSpritePalette((ySel*10)+xSel, PAL2);
+    VDP_setSpritePalette((ySel*10)+xSel, PAL2); // Set newly selected button palette
 }
 
 void VBlank_TextInput()

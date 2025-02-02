@@ -25,6 +25,10 @@ int main(bool hardReset)
     VDP_setSpriteListAddress(0xF800);
     VDP_setHScrollTableAddress(0xFC00);
 
+    VDP_setScrollingMode(HSCROLL_LINE, VSCROLL_COLUMN);
+
+    Z80_loadDriver(Z80_DRIVER_XGM, TRUE);
+
     SYS_enableInts();
     VDP_setEnable(TRUE);
 

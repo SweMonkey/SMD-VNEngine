@@ -1,4 +1,5 @@
 #include "ScriptEngine.h"
+#include "GameState.h"
 
 #define DEF_NUM_OPCODE 13       // Number of opcodes available
 #define DEF_MAX_VAR 64          // Number of max variables the VM can hold
@@ -182,7 +183,10 @@ VN_ScriptVar *SearchP1(char *line)
 
     if (NumVar >= DEF_MAX_VAR)
     {
+        #ifdef DEBUG_STATE_MSG
         KLog("Max integer variables reached.");
+        #endif
+
         return NULL;
     }
 
@@ -222,7 +226,10 @@ void ParseLine(char *line)
 
     if (opcode == NOPE)
     {
+        #ifdef DEBUG_STATE_MSG
         KLog("VM Warning: Trying to run NOPE opcode!");
+        #endif
+        
         return;
     }
 

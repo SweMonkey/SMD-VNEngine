@@ -1,3 +1,4 @@
+Using the district font: https://damieng.com/typography/zx-origins/district/
 Original font by DamienG - https://damieng.com/zx-origins
 
 Font slightly modified for use in Sega Megadrive/Genesis project "VN Engine"

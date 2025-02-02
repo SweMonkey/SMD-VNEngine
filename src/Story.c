@@ -29,13 +29,21 @@ addv view, 1\n\
 const VN_Character UnknownFemale =
 {
     &IMG_FS_000,
-    "Unknown Female"
+    "Unknown Female",
+    0xE44
 };
 
 const VN_Character CyberAnomalie =
 {
     &IMG_FS_000,
-    "Cyber anomalie"
+    "Cyber anomalie",
+    0x44A
+};
+
+const VN_Track MUS_STOP =
+{
+    MUS_DUMMY,
+    -1
 };
 
 const VN_Track Track1 =
@@ -151,14 +159,14 @@ const VN_Page Page1 =
     (LFX_FADEIN | LFX_FADEOUT | LFX_LINEGLITCH),   // BG Effects
     (LFX_FADEIN | LFX_FADEOUT | LFX_LINEGLITCH),   // FG Effects
     {
-        "Lorem ipsum dolor sit amet massa nun\0",
-        "Aenean nec porta lectus. Sed non dui\0",
-        "Ut consectetur scelerisque felis nis\0",
-        "Sed ex elit, vestibulum et urna fusc\0"
+        "Lorem ipsum dolor ERROR amet massa nu\0",
+        "Aenean ERROR porta lectus. ERROR dui\0",
+        "ERROR ERROR elit, ex ERROR FAULT ERRO\0",
+        "CRASH IMMINENT! ERROR ERROR ERRO.....\0"
     },
     300,                // Switch delay
     {                   // Next Page
-        &EntryPage,
+        NULL,
         NULL,
         NULL,
         NULL
@@ -167,7 +175,7 @@ const VN_Page Page1 =
     &Track2,        // Track
     TRUE,           // bTextbox
     TRUE,           // bHighColourBG
-    TRUE,          // bAutoSwitch
+    TRUE,           // bAutoSwitch
 };
 
 const VN_Page EntryPage =
@@ -178,8 +186,8 @@ const VN_Page EntryPage =
     &IMG_BG_003,        // BG
     &IMG_FG_003,        // FG
 
-    (LFX_FADEIN | LFX_FADEOUT),                 // BG Effects
-    (LFX_FADEIN | LFX_FADEOUT),  // FG Effects  | LFX_SINEWAVE
+    (LFX_FADEIN | LFX_FADEOUT),     // BG Effects
+    (LFX_FADEIN | LFX_FADEOUT),     // FG Effects  | LFX_SINEWAVE
     {
         "Choice 1 - Script string test\0",
         "Choice 2 - error\0",
@@ -194,7 +202,7 @@ const VN_Page EntryPage =
         &EntryPage
     },
     NULL,           // Script
-    NULL,//&Track1  // Track
+    &MUS_STOP,      // Track
     TRUE,           // bTextbox
     FALSE,          // bHighColourBG
     FALSE,          // bAutoSwitch
@@ -571,8 +579,8 @@ const VN_Page Page14 =
     NULL,               // BG
     NULL,               // FG
 
-    (LFX_FADEOUT),                  // BG Effects
-    (LFX_FADEOUT | LFX_SLIDEIN),    // FG Effects
+    (LFX_NONE),         // BG Effects
+    (LFX_SLIDEIN),      // FG Effects
     {
         "SlideIn FG\0",
         "\0",
@@ -581,7 +589,7 @@ const VN_Page Page14 =
     },
     500,                // Switch delay
     {                   // Next Page
-        &EntryPage,
+        &Page15,
         NULL,
         NULL,
         NULL
@@ -591,4 +599,34 @@ const VN_Page Page14 =
     TRUE,           // bTextbox
     FALSE,          // bHighColourBG
     FALSE,          // bAutoSwitch
+};
+
+const VN_Page Page15 =
+{
+    PAGETYPE_PAGE,   // Page Type
+    NULL,            // Character
+
+    NULL,               // BG
+    NULL,               // FG
+
+    (LFX_FADEOUT),      // BG Effects
+    (LFX_FADEOUT),      // FG Effects
+    {
+        "\0",
+        "\0",
+        "\0",
+        "\0"
+    },
+    200,                // Switch delay
+    {                   // Next Page
+        &EntryPage,
+        NULL,
+        NULL,
+        NULL
+    },
+    NULL,           // Script
+    NULL,           // Track
+    FALSE,          // bTextbox
+    FALSE,          // bHighColourBG
+    TRUE,           // bAutoSwitch
 };

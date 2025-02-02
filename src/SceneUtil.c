@@ -1,5 +1,6 @@
 #include "SceneUtil.h"
 #include "SceneFX.h"
+#include "GameState.h"
 #include "../res/System_res.h"
 
 const u16 CharMap[5][38] =
@@ -100,9 +101,12 @@ TileSet *UnpackTS(const Image *image)
 
     if (TS == NULL)
     {
+        #ifdef DEBUG_STATE_MSG
         KLog("Failed to unpack tileset");
         KLog_U1("Largest free block: ", MEM_getLargestFreeBlock());
         KLog_U1("Tileset compression: ", image->tileset->compression);
+        #endif
+
         return NULL;
     }
 
@@ -118,9 +122,12 @@ TileMap *UnpackTM(const Image *image)
 
     if (TM == NULL)
     {
+        #ifdef DEBUG_STATE_MSG
         KLog("Failed to unpack tilemap");
         KLog_U1("Largest free block: ", MEM_getLargestFreeBlock());
         KLog_U1("Tilemap compression: ", image->tilemap->compression);
+        #endif
+
         return NULL;
     }
 
@@ -129,10 +136,9 @@ TileMap *UnpackTM(const Image *image)
 
 bool DrawImageFG(const Image *image, bool bLowColour)
 {
-    if ((1 + image->tileset->numTile >= TileIdxBG_Start)) 
-    {
-        KLog("Warning: FG image is stomping over BG image!");
-    }
+    #ifdef DEBUG_STATE_MSG
+    if ((1 + image->tileset->numTile >= TileIdxBG_Start)) KLog("Warning: FG image is stomping over BG image!");
+    #endif
 
     // Tileset
 
@@ -147,7 +153,6 @@ bool DrawImageFG(const Image *image, bool bLowColour)
     VDP_loadTileSet(TS, 1, DMA_QUEUE);
 
     SYS_doVBlankProcess();
-    //SYS_doVBlankProcess();
 
     TileIdxFG_End = TS->numTile+1;
 
@@ -159,14 +164,13 @@ bool DrawImageFG(const Image *image, bool bLowColour)
     TileMap *TM = UnpackTM(image);    
     if (TM == NULL) return FALSE;
 
-    u16 offsetLo = (22 * TM->w);  // Lower half of image (shadowed)
     u8 offx = (40 - TM->w) >> 1;  // Centering image
-    u8 height = TM->h - 22;       // Height of lower half of image (shadowed)
-    if (height > 8) height = 8;   // Clip the height of the lower half of image
+
+    // Clear tilemap under the textbox border line (Will look funky if doing linescroll in that area otherwise)
+    VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, TRUE, FALSE,FALSE, 0), 0, 21, 64, 1);
 
     // Set top and bottom half of tilemap (Top 20 high prio, bottom 10 low prio)
-    VDP_setTileMapDataRectEx(BG_A, TM->tilemap, TILE_ATTR_FULL(Palette, TRUE, FALSE, FALSE, 1), offx,  0, TM->w, 22, TM->w, DMA_QUEUE);
-    if (height > 0) VDP_setTileMapDataRectEx(BG_A, TM->tilemap + offsetLo, TILE_ATTR_FULL(Palette, FALSE, FALSE, FALSE, 1), offx, 22, TM->w, height, TM->w, DMA_QUEUE);
+    VDP_setTileMapDataRectEx(BG_A, TM->tilemap, TILE_ATTR_FULL(Palette, TRUE, FALSE, FALSE, 1), offx,  0, TM->w, TM->h, TM->w, DMA_QUEUE);
 
     SYS_doVBlankProcess();
 
@@ -179,30 +183,28 @@ bool DrawImageBG(const Image *image)
 {
     // Tileset
 
-    TileSet *TS = UnpackTS(image);    
+    TileSet *TS = UnpackTS(image);
     if (TS == NULL) return FALSE;
 
     TileIdxBG_Start = 0x600-image->tileset->numTile;
-
-    // Lockup 1
-    //VDP_clearPlane(BG_B, TRUE); // Clear plane B, because sometimes there is garbage tiles left behind in the tilemap
 
     VDP_fillTileMapRect(BG_B, TILE_ATTR_FULL(PAL0, TRUE, FALSE,FALSE, 0), 0, 0, 40, 21);
     VDP_fillTileMapRect(BG_B, TILE_ATTR_FULL(PAL0, FALSE, FALSE,FALSE, 0), 0, 21, 40, 7);
 
     VDP_loadTileSet(TS, TileIdxBG_Start, DMA_QUEUE);
 
-    // Lockup 2
     //SYS_doVBlankProcess();
 
+    #ifdef DEBUG_STATE_MSG
     if (TileIdxBG_Start <= TileIdxFG_End) KLog("Warning: BG image is stomping over FG image!");
+    #endif
 
     if (image->tileset->compression != COMPRESSION_NONE) MEM_free(TS);
 
 
     // Tilemap
 
-    TileMap *TM = UnpackTM(image);    
+    TileMap *TM = UnpackTM(image);
     if (TM == NULL) return FALSE;
 
     u16 offsetLo = (22 * TM->w);  // Lower half of image (shadowed)
@@ -221,6 +223,49 @@ bool DrawImageBG(const Image *image)
     return TRUE;
 }
 
+bool Set_SHBoxEnable(VN_Page *page, bool bEnabled)
+{
+    if ((page == NULL) || (page->FG == NULL)) return FALSE;
+
+    TileMap *TM = UnpackTM(page->FG);    
+    if (TM == NULL) return FALSE;
+
+    u8 Palette = (page->bHighColourBG ? PAL2 : PAL1);
+    u16 offsetLo = (22 * TM->w);        // Lower half of image (shadowed)
+    u8 offx = (40 - TM->w) >> 1;        // Centering image
+    u8 height = TM->h - 22;             // Height of lower half of image (shadowed)
+    u8 offx_width = 64-(TM->w+offx);    // How many unused tiles there are on the right side of the image in the tilemap
+
+    // Clear area to the left and right of the FG image so they are not shadowed
+    if (offx > 0)       VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(Palette, !bEnabled, FALSE, FALSE, 1), 0, 22, offx, height);                // Left
+    if (offx_width > 0) VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(Palette, !bEnabled, FALSE, FALSE, 1), TM->w+offx, 22, offx_width, height); // Right
+
+    // Set top and bottom half of tilemap (Top 20 high prio, bottom 10 low prio)
+    VDP_setTileMapDataRectEx(BG_A, TM->tilemap + offsetLo, TILE_ATTR_FULL(Palette, !bEnabled, FALSE, FALSE, 1), offx, 22, TM->w, height, TM->w, DMA_QUEUE);
+
+    //SYS_doVBlankProcess();
+
+    if (page->FG->tilemap->compression != COMPRESSION_NONE) MEM_free(TM);
+
+    return TRUE;
+}
+
+void PrintTextSpeaker(const char *str)
+{
+    u8 px = 1;
+
+    for (u16 current_char = 0; current_char < 38; current_char++)
+    {
+        if (str[current_char] == 0) break;
+
+        VDP_loadTileData(FONT_SPEAKER.tiles+((str[current_char]-32)<<3), CharMap[0][px] , 1, DMA_QUEUE_COPY); // Many small updates...
+
+        px++;
+    }
+
+    return;
+}
+
 void PrintTextLine(const char *str, u8 x, u8 y, u16 delay)
 {
     u8 px = x;
@@ -229,7 +274,7 @@ void PrintTextLine(const char *str, u8 x, u8 y, u16 delay)
     {
         if (str[current_char] == 0) break;
 
-        VDP_loadTileData(FONT_SCENESH.tiles+((str[current_char]-32)<<3), CharMap[y][px] , 1, DMA_QUEUE_COPY); // Many small updates...
+        VDP_loadTileData(FONT_NORMAL.tiles+((str[current_char]-32)<<3), CharMap[y][px] , 1, DMA_QUEUE_COPY); // Many small updates...
 
         px++;
 
@@ -286,7 +331,6 @@ inline void WaitFrames(u16 delay)
 
     for (u8 w = 0; w < d; w++) 
     {
-        //VN_DoVBlank();
         FX_RunEffect();
         SYS_doVBlankProcess();
     }
@@ -295,6 +339,5 @@ inline void WaitFrames(u16 delay)
 inline void VN_DoVBlank()
 {
     FX_RunEffect();
-    //XGM_nextXFrame(1);
     SYS_doVBlankProcess();
 }

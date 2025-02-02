@@ -33,6 +33,7 @@ typedef struct s_character
 {
     const Image *Portrait;
     const char *Name;
+    const u16 Color;
 } VN_Character;
 
 typedef struct s_page
@@ -60,12 +61,15 @@ typedef struct s_page
     const bool bAutoSwitch;     // True: Switch to next page automatically when SwitchDelay reaches 0
 } VN_Page;
 
+// Textbox variables
 extern u16 VNS_TextDelay;
 extern u8 VNS_TextBoxStyle;
 extern u16 VNS_TextBoxColor;
 
 bool DrawImageFG(const Image *image, bool bLowColour);
 bool DrawImageBG(const Image *image);
+bool Set_SHBoxEnable(VN_Page *page, bool bEnabled);
+void PrintTextSpeaker(const char *str);
 void PrintTextLine(const char *str, u8 x, u8 y, u16 delay);
 void DrawPortrait(const Image *image);
 void ClearTextArea();
